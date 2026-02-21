@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Gestão de Materiais Pro</title>
+  <title>Rotina de Inventário - MS Florestal</title>
 
   <style>
     :root {
@@ -97,6 +97,16 @@
       min-height: 100vh;
       overflow-x: hidden;
       position: relative;
+      overscroll-behavior-y: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body.scroll-lock {
+      position: fixed;
+      width: 100%;
+      overflow: hidden;
+      left: 0;
+      right: 0;
     }
 
     .orb {
@@ -122,17 +132,18 @@
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto;
       padding: clamp(14px, 4vw, 22px);
       display: flex;
       flex-direction: column;
       gap: 14px;
+      padding-bottom: 90px;
     }
 
     .topbar {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
       margin-top: 6px;
@@ -141,28 +152,45 @@
     .brand {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
+      min-width: 0;
     }
 
     .title {
-      font-size: clamp(1.2rem, 5vw, 1.55rem);
-      font-weight: 800;
+      font-size: clamp(1.18rem, 5vw, 1.55rem);
+      font-weight: 900;
       letter-spacing: -0.02em;
       background: linear-gradient(to right, var(--text), var(--muted2));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      line-height: 1.08;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .subtitle {
       font-size: 0.86rem;
       color: var(--muted);
-      font-weight: 600;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .byline {
+      font-size: 0.78rem;
+      color: var(--muted2);
+      font-weight: 800;
+      opacity: 0.85;
     }
 
     .right-actions {
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .card {
@@ -196,7 +224,7 @@
       color: var(--muted);
       text-decoration: underline;
       font-size: 0.86rem;
-      font-weight: 700;
+      font-weight: 900;
       cursor: pointer;
       padding: 6px 8px;
       border-radius: var(--radius-md);
@@ -222,7 +250,7 @@
       cursor: pointer;
       padding: 10px 12px;
       border-radius: 999px;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 0.84rem;
       color: var(--muted);
       background: transparent;
@@ -287,18 +315,19 @@
     .section-title h2 {
       font-size: 0.98rem;
       color: var(--muted);
-      font-weight: 900;
+      font-weight: 950;
       letter-spacing: -0.01em;
     }
 
     .badge {
       font-size: 0.78rem;
       color: var(--muted);
-      font-weight: 900;
+      font-weight: 950;
       padding: 6px 10px;
       border-radius: 999px;
       background: var(--chip);
       border: 1px solid var(--chip-border);
+      text-align: center;
     }
 
     .group {
@@ -333,12 +362,15 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .group-meta {
       font-size: 0.82rem;
       color: var(--muted);
-      font-weight: 800;
+      font-weight: 900;
     }
 
     .chev {
@@ -364,7 +396,7 @@
 
     .row {
       display: grid;
-      grid-template-columns: 1fr 122px;
+      grid-template-columns: 1fr 148px;
       gap: 10px;
       align-items: center;
       padding: 10px;
@@ -383,7 +415,7 @@
 
     .item-name {
       font-size: 0.92rem;
-      font-weight: 900;
+      font-weight: 950;
       letter-spacing: -0.01em;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -400,7 +432,7 @@
     .unit {
       font-size: 0.78rem;
       color: var(--muted);
-      font-weight: 900;
+      font-weight: 950;
       padding: 4px 8px;
       border-radius: 999px;
       background: var(--chip);
@@ -445,12 +477,13 @@
       background: var(--input);
       color: var(--text);
       font-weight: 950;
-      font-size: 1rem;
+      font-size: 16px;
       outline: none;
       transition: border var(--transition), background var(--transition);
       text-align: right;
       appearance: none;
       font-family: inherit;
+      min-height: 44px;
     }
 
     .qty:focus {
@@ -459,8 +492,8 @@
     }
 
     .trash {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 14px;
       border: 1px solid transparent;
       background: transparent;
@@ -494,6 +527,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
+      min-height: 52px;
     }
 
     .cta:active { transform: scale(0.98); }
@@ -524,7 +558,7 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       color: white;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 0.88rem;
       line-height: 1.35;
       animation: drop var(--transition-bounce), fade 360ms ease 3.6s forwards;
@@ -563,7 +597,7 @@
 
     .modal-card {
       width: 100%;
-      max-width: 460px;
+      max-width: 520px;
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: var(--radius-xl);
@@ -592,8 +626,8 @@
     }
 
     .close {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 14px;
       border: 1px solid var(--border2);
       background: var(--glass);
@@ -621,7 +655,7 @@
     .label {
       font-size: 0.86rem;
       color: var(--muted);
-      font-weight: 900;
+      font-weight: 950;
     }
 
     .input, .select, .textarea {
@@ -632,8 +666,8 @@
       background: var(--input);
       color: var(--text);
       outline: none;
-      font-weight: 850;
-      font-size: 0.95rem;
+      font-weight: 900;
+      font-size: 16px;
       transition: border var(--transition), background var(--transition);
       font-family: inherit;
       appearance: none;
@@ -657,6 +691,7 @@
       background: linear-gradient(135deg, var(--primary), var(--primary2));
       color: white;
       box-shadow: 0 18px 44px rgba(37, 99, 235, 0.18);
+      min-height: 48px;
     }
 
     .primarybtn:active { transform: scale(0.98); }
@@ -673,6 +708,7 @@
       background: transparent;
       border: 1px solid var(--border);
       color: var(--text);
+      min-height: 48px;
     }
 
     .secondarybtn:active { transform: scale(0.98); }
@@ -680,7 +716,7 @@
     .hint {
       font-size: 0.84rem;
       color: var(--muted);
-      font-weight: 800;
+      font-weight: 900;
       line-height: 1.35;
     }
 
@@ -689,11 +725,54 @@
       font-size: 0.86rem;
     }
 
-    @media (min-width: 680px) {
-      .grid2 { grid-template-columns: 1fr; }
-      .row { grid-template-columns: 1fr 140px; }
+    .footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .footer .foot-card {
+      pointer-events: auto;
+      max-width: 760px;
+      width: calc(100% - 24px);
+      background: var(--glass2);
+      border: 1px solid var(--border2);
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 0.78rem;
+    }
+
+    .foot-left {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .foot-right {
+      opacity: 0.85;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 700px) {
+      .row { grid-template-columns: 1fr 170px; }
+      .modal-card { max-width: 620px; }
     }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -706,15 +785,18 @@
   <main class="app">
     <div class="topbar">
       <div class="brand">
-        <div class="title">Gestão de Materiais Pro</div>
-        <div class="subtitle" id="subtitle">Contagem local com backup</div>
+        <div class="title">Rotina de Inventário  MS Florestal</div>
+        <div class="subtitle" id="subtitle">
+          <span id="subtitleDivision">Divisão: </span>
+          <span class="byline">feito por Lucas Marques</span>
+        </div>
       </div>
 
       <div class="right-actions">
         <div class="theme-toggle" title="Tema">
-          <button class="iconbtn" id="btnTheme" aria-label="Alternar tema">
+          <button class="iconbtn" id="btnTheme" aria-label="Alternar tema" type="button">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-              <path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12Zm0-16a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 18a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1ZM4.22 5.64a1 1 0 0 1 1.41 0l.7.7a1 1 0 1 1-1.41 1.41l-.7-.7a1 1 0 0 1 0-1.41Zm13.45 13.45a1 1 0 0 1 1.41 0l.7.7a1 1 0 1 1-1.41 1.41l-.7-.7a1 1 0 0 1 0-1.41ZM2 13a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1Zm18 0a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1ZM5.64 19.78a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.41 1.41l-.7.7a1 1 0 0 1-1.41 0ZM19.09 6.33a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.41 1.41l-.7.7a1 1 0 0 1-1.41 0Z"/>
+              <path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12Zm0-16a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 18a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1ZM4.22 5.64a1 1 0 0 1 1.41 0l.7.7a1 1 0 1 1-1.41 1.41l-.7-.7a1 1 0 0 1 0-1.41Zm13.45 13.45a1 1 0 0 1 1.41 0l.7.7a1 1 0 1 1-1.41 1.41l-.7-.7a1 1 0 0 1 0-1.41ZM2 13a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1Zm18 0a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1ZM5.64 19.78a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.41 1.41l-.7.7a1 0 0 1-1.41 0ZM19.09 6.33a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.41 1.41l-.7.7a1 1 0 0 1-1.41 0Z"/>
             </svg>
           </button>
         </div>
@@ -735,7 +817,7 @@
 
     <section class="card">
       <div class="toolbar">
-        <button class="linkbtn primary" id="btnNewItem" type="button">Cadastrar Material</button>
+        <button class="linkbtn primary" id="btnNewItem" type="button">Solicitar cadastro</button>
         <div class="toolgroup">
           <button class="linkbtn" id="btnExport" type="button">Exportar Backup</button>
           <button class="linkbtn" id="btnImport" type="button">Importar</button>
@@ -747,7 +829,7 @@
     <section class="card">
       <div class="section-title">
         <h2>Materiais</h2>
-        <span class="badge" id="statusHint">Toque no status para alternar</span>
+        <span class="badge">Toque em Normal, Bloqueado ou Vencido para alternar</span>
       </div>
 
       <div class="grid2" id="groupsRoot"></div>
@@ -761,10 +843,17 @@
     </section>
   </main>
 
+  <div class="footer">
+    <div class="foot-card">
+      <div class="foot-left">Rotina de Inventário  MS Florestal</div>
+      <div class="foot-right">feito por Lucas Marques</div>
+    </div>
+  </div>
+
   <div class="modal" id="modalNew">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalNewTitle">
       <div class="modal-head">
-        <div class="modal-title" id="modalNewTitle">Cadastrar Material</div>
+        <div class="modal-title" id="modalNewTitle">Solicitar cadastro</div>
         <button class="close" id="btnCloseNew" type="button" aria-label="Fechar">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
             <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12 5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4Z"/>
@@ -784,8 +873,9 @@
         </div>
 
         <div class="field">
-          <div class="label">Grupo</div>
+          <div class="label">Grupo desejado</div>
           <select class="select" id="newGroup" required>
+            <option value="Solicitação de Cadastro">Solicitação de Cadastro</option>
             <option value="Insumo">Insumo</option>
             <option value="Insumo Bloqueado">Insumo Bloqueado</option>
             <option value="Insumo Vencido">Insumo Vencido</option>
@@ -794,11 +884,11 @@
           </select>
         </div>
 
-        <button class="primarybtn" type="submit">Salvar</button>
+        <button class="primarybtn" type="submit">Registrar solicitação</button>
       </form>
 
       <div class="hint" style="margin-top:10px;">
-        Dica: materiais do tipo Insumo podem alternar entre Normal, Bloqueado e Vencido pelo chip de status
+        As solicitações ficam no grupo Solicitação de Cadastro e vão junto na mensagem para padronizar
       </div>
     </div>
   </div>
@@ -815,7 +905,7 @@
       </div>
 
       <div class="hint" style="margin-bottom:10px;">
-        Se o download falhar no celular, copie o texto abaixo e salve como .json
+        Se o download falhar, copie o texto e salve como .json
       </div>
 
       <textarea class="textarea mono" id="backupText" rows="10" readonly></textarea>
@@ -823,6 +913,44 @@
       <div style="display:grid; gap:10px; margin-top:10px;">
         <button class="primarybtn" id="btnCopyBackup" type="button">Copiar</button>
         <button class="secondarybtn" id="btnShareBackup" type="button">Compartilhar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalPreview">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalPreviewTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="modalPreviewTitle">Pré visualização</div>
+        <button class="close" id="btnClosePreview" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12 5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4Z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="hint" style="margin-bottom:10px;">
+        Confira a mensagem e a tabela antes de confirmar o envio
+      </div>
+
+      <div class="field">
+        <div class="label">Mensagem do Whats</div>
+        <textarea class="textarea mono" id="previewMsg" rows="8" readonly></textarea>
+      </div>
+
+      <div class="field" style="margin-top:10px;">
+        <div class="label">Tabela CSV para Excel</div>
+        <textarea class="textarea mono" id="previewCsv" rows="7" readonly></textarea>
+      </div>
+
+      <div style="display:grid; gap:10px; margin-top:12px;">
+        <button class="primarybtn" id="btnConfirmSend" type="button">Confirmar envio</button>
+        <button class="secondarybtn" id="btnCancelSend" type="button">Cancelar</button>
+        <button class="primarybtn" id="btnCopyCsv" type="button">Copiar tabela CSV</button>
+        <button class="secondarybtn" id="btnShareXlsx" type="button">Gerar e compartilhar Excel</button>
+      </div>
+
+      <div class="hint" style="margin-top:10px;">
+        Observação: o Whats por link não anexa arquivo automaticamente. O botão de Excel abre o menu de compartilhar e você escolhe Whats
       </div>
     </div>
   </div>
@@ -836,8 +964,18 @@
         "Insumo Bloqueado",
         "Insumo Vencido",
         "Uso e Consumo",
-        "Fertilizantes"
+        "Fertilizantes",
+        "Solicitação de Cadastro"
       ];
+
+      const GROUP_EMOJI = {
+        "Insumo": "🌿",
+        "Insumo Bloqueado": "⛔",
+        "Insumo Vencido": "⌛",
+        "Uso e Consumo": "🧰",
+        "Fertilizantes": "🌱",
+        "Solicitação de Cadastro": "📝"
+      };
 
       const DIVISIONS = {
         AC: "Água Clara - MS",
@@ -852,15 +990,6 @@
           hour: "2-digit",
           minute: "2-digit"
         });
-      }
-
-      function escapeHtml(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
       }
 
       function safeUUID() {
@@ -969,38 +1098,34 @@
           this.key = key;
           this.mem = null;
           this.preferIDB = true;
-          this.idb = new IDBKV("gestao_material_pro_db", "kv");
+          this.idb = new IDBKV("rotina_inventario_msflorestal_db", "kv");
         }
 
         defaultState() {
           return {
-            version: 3,
+            version: 4,
             theme: "dark",
             division: "AC",
-            groupOpen: {
-              "Insumo": true,
-              "Insumo Bloqueado": true,
-              "Insumo Vencido": true,
-              "Uso e Consumo": true,
-              "Fertilizantes": true
-            },
+            groupOpen: Object.fromEntries(GROUP_ORDER.map(g => [g, true])),
             countsText: {},
             pendingClear: false,
+            lastPreview: { msg: "", csv: "", meta: null },
             items: createInitialItems()
           };
         }
 
         migrate(state) {
-          if (!state || typeof state !== "object") return this.defaultState();
-
           const base = this.defaultState();
+          if (!state || typeof state !== "object") return base;
+
           const out = {
-            version: 3,
+            version: 4,
             theme: (state.theme === "light" || state.theme === "dark") ? state.theme : base.theme,
             division: (state.division === "AC" || state.division === "BG") ? state.division : base.division,
             groupOpen: { ...base.groupOpen, ...(state.groupOpen || {}) },
             countsText: (state.countsText && typeof state.countsText === "object") ? state.countsText : {},
             pendingClear: !!state.pendingClear,
+            lastPreview: (state.lastPreview && typeof state.lastPreview === "object") ? state.lastPreview : base.lastPreview,
             items: Array.isArray(state.items) ? state.items : base.items
           };
 
@@ -1016,6 +1141,7 @@
             }));
 
           if (!out.items.length) out.items = base.items;
+          for (const g of GROUP_ORDER) if (typeof out.groupOpen[g] !== "boolean") out.groupOpen[g] = true;
           return out;
         }
 
@@ -1114,7 +1240,6 @@
         ];
 
         const items = [];
-
         for (const [name, unit] of insumo) items.push({ id: safeUUID(), name, unit, kind: "Insumo", status: "normal", isCustom: false });
         for (const [name, unit] of blocked) items.push({ id: safeUUID(), name, unit, kind: "Insumo", status: "blocked", isCustom: false });
         for (const [name, unit] of expired) items.push({ id: safeUUID(), name, unit, kind: "Insumo", status: "expired", isCustom: false });
@@ -1125,7 +1250,9 @@
       }
 
       function displayGroupOf(item) {
+        if (item.kind === "Solicitação de Cadastro") return "Solicitação de Cadastro";
         if (item.kind !== "Insumo") return item.kind;
+
         if (item.status === "blocked") return "Insumo Bloqueado";
         if (item.status === "expired") return "Insumo Vencido";
         return "Insumo";
@@ -1149,15 +1276,24 @@
         return "normal";
       }
 
+      function csvEscape(value) {
+        const s = String(value ?? "");
+        const needs = /[;"\n\r]/.test(s);
+        if (!needs) return s;
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+
       class App {
         constructor() {
-          this.store = new ResilientStore("gestao_material_pro_v3");
+          this.store = new ResilientStore("rotina_inventario_msflorestal_v4");
           this.state = null;
-
           this.persistTimer = null;
 
+          this.scrollLockY = 0;
+          this.focusDepth = 0;
+
           this.el = {
-            subtitle: document.getElementById("subtitle"),
+            subtitleDivision: document.getElementById("subtitleDivision"),
             groupsRoot: document.getElementById("groupsRoot"),
             badge: document.getElementById("countBadge"),
             divAC: document.getElementById("divAC"),
@@ -1168,17 +1304,28 @@
             btnExport: document.getElementById("btnExport"),
             btnImport: document.getElementById("btnImport"),
             importFile: document.getElementById("importFile"),
+
             modalNew: document.getElementById("modalNew"),
             btnCloseNew: document.getElementById("btnCloseNew"),
             formNew: document.getElementById("formNew"),
             newName: document.getElementById("newName"),
             newUnit: document.getElementById("newUnit"),
             newGroup: document.getElementById("newGroup"),
+
             modalBackup: document.getElementById("modalBackup"),
             btnCloseBackup: document.getElementById("btnCloseBackup"),
             backupText: document.getElementById("backupText"),
             btnCopyBackup: document.getElementById("btnCopyBackup"),
-            btnShareBackup: document.getElementById("btnShareBackup")
+            btnShareBackup: document.getElementById("btnShareBackup"),
+
+            modalPreview: document.getElementById("modalPreview"),
+            btnClosePreview: document.getElementById("btnClosePreview"),
+            previewMsg: document.getElementById("previewMsg"),
+            previewCsv: document.getElementById("previewCsv"),
+            btnConfirmSend: document.getElementById("btnConfirmSend"),
+            btnCancelSend: document.getElementById("btnCancelSend"),
+            btnCopyCsv: document.getElementById("btnCopyCsv"),
+            btnShareXlsx: document.getElementById("btnShareXlsx")
           };
         }
 
@@ -1194,7 +1341,7 @@
             if (document.visibilityState === "visible") this.handleReturnFromWhats();
           });
 
-          UI.toast("Pronto para registrar contagem", "success");
+          UI.toast("✅ Pronto para registrar a contagem", "success");
         }
 
         setState(patch) {
@@ -1206,8 +1353,8 @@
           if (this.persistTimer) clearTimeout(this.persistTimer);
           this.persistTimer = setTimeout(async () => {
             try { await this.store.write(this.state); }
-            catch (e) { UI.toast("Falha ao salvar localmente", "warning"); }
-          }, 180);
+            catch { UI.toast("⚠️ Falha ao salvar localmente", "warning"); }
+          }, 160);
         }
 
         bind() {
@@ -1216,7 +1363,11 @@
 
           this.el.btnTheme.addEventListener("click", () => this.toggleTheme());
 
-          this.el.btnNewItem.addEventListener("click", () => UI.open("modalNew"));
+          this.el.btnNewItem.addEventListener("click", () => {
+            this.el.newGroup.value = "Solicitação de Cadastro";
+            UI.open("modalNew");
+          });
+
           this.el.btnCloseNew.addEventListener("click", () => UI.close("modalNew"));
 
           this.el.formNew.addEventListener("submit", (e) => {
@@ -1231,6 +1382,14 @@
           this.el.btnCloseBackup.addEventListener("click", () => UI.close("modalBackup"));
           this.el.btnCopyBackup.addEventListener("click", () => this.copyBackup());
           this.el.btnShareBackup.addEventListener("click", () => this.shareBackup());
+
+          this.el.btnSend.addEventListener("click", () => this.openPreview());
+
+          this.el.btnClosePreview.addEventListener("click", () => UI.close("modalPreview"));
+          this.el.btnCancelSend.addEventListener("click", () => UI.close("modalPreview"));
+          this.el.btnConfirmSend.addEventListener("click", () => this.confirmSend());
+          this.el.btnCopyCsv.addEventListener("click", () => this.copyCsv());
+          this.el.btnShareXlsx.addEventListener("click", () => this.shareXlsx());
 
           this.el.groupsRoot.addEventListener("click", (e) => {
             const header = e.target.closest("[data-group-header]");
@@ -1255,6 +1414,18 @@
             }
           });
 
+          this.el.groupsRoot.addEventListener("focusin", (e) => {
+            const inp = e.target.closest("[data-qty-id]");
+            if (!inp) return;
+            this.lockScroll();
+          });
+
+          this.el.groupsRoot.addEventListener("focusout", (e) => {
+            const inp = e.target.closest("[data-qty-id]");
+            if (!inp) return;
+            this.unlockScrollDelayed();
+          });
+
           this.el.groupsRoot.addEventListener("input", (e) => {
             const inp = e.target.closest("[data-qty-id]");
             if (!inp) return;
@@ -1264,7 +1435,40 @@
             this.refreshBadgesOnly();
           });
 
-          this.el.btnSend.addEventListener("click", () => this.registerCount());
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              UI.close("modalNew");
+              UI.close("modalBackup");
+              UI.close("modalPreview");
+            }
+          });
+
+          ["modalNew", "modalBackup", "modalPreview"].forEach((id) => {
+            const overlay = document.getElementById(id);
+            overlay.addEventListener("click", (e) => {
+              if (e.target === overlay) UI.close(id);
+            });
+          });
+        }
+
+        lockScroll() {
+          this.focusDepth += 1;
+          if (this.focusDepth > 1) return;
+          this.scrollLockY = window.scrollY || 0;
+          document.body.classList.add("scroll-lock");
+          document.body.style.top = "-" + this.scrollLockY + "px";
+        }
+
+        unlockScrollDelayed() {
+          this.focusDepth = Math.max(0, this.focusDepth - 1);
+          if (this.focusDepth !== 0) return;
+
+          setTimeout(() => {
+            document.body.classList.remove("scroll-lock");
+            const y = this.scrollLockY;
+            document.body.style.top = "";
+            window.scrollTo(0, y);
+          }, 60);
         }
 
         applyTheme(theme) {
@@ -1275,14 +1479,14 @@
         toggleTheme() {
           const next = this.state.theme === "dark" ? "light" : "dark";
           this.applyTheme(next);
-          UI.toast(next === "dark" ? "Tema escuro ativado" : "Tema claro ativado", "success");
+          UI.toast(next === "dark" ? "🌙 Tema escuro ativado" : "☀️ Tema claro ativado", "success");
         }
 
         setDivision(code) {
           if (code !== "AC" && code !== "BG") return;
           this.setState({ division: code });
           this.updateDivisionUI();
-          UI.toast("Divisão selecionada: " + DIVISIONS[code], "success");
+          UI.toast("📍 Divisão: " + DIVISIONS[code], "success");
         }
 
         updateDivisionUI() {
@@ -1291,7 +1495,7 @@
           this.el.divBG.classList.toggle("active", !ac);
 
           const divisionLabel = DIVISIONS[this.state.division] || DIVISIONS.AC;
-          this.el.subtitle.textContent = "Divisão: " + divisionLabel;
+          this.el.subtitleDivision.textContent = "📌 Divisão: " + divisionLabel + "  ";
         }
 
         toggleGroup(groupName) {
@@ -1311,7 +1515,6 @@
           const updated = [...this.state.items];
           updated[idx] = { ...it, status: nextStatus(it.status) };
           this.setState({ items: updated });
-
           this.renderAll();
         }
 
@@ -1319,7 +1522,7 @@
           const it = this.state.items.find(x => x.id === id);
           if (!it || !it.isCustom) return;
 
-          const ok = window.confirm("Remover este material do catálogo?");
+          const ok = window.confirm("Remover esta solicitação do catálogo?");
           if (!ok) return;
 
           const items = this.state.items.filter(x => x.id !== id);
@@ -1328,7 +1531,7 @@
 
           this.setState({ items, countsText: counts });
           this.renderAll();
-          UI.toast("Material removido", "success");
+          UI.toast("🗑️ Removido", "success");
         }
 
         addCustomItem() {
@@ -1336,11 +1539,11 @@
           const unit = String(this.el.newUnit.value || "").trim();
           const group = String(this.el.newGroup.value || "").trim();
 
-          if (!name) { UI.toast("Informe um nome válido", "error"); return; }
-          if (!group) { UI.toast("Selecione um grupo", "error"); return; }
+          if (!name) { UI.toast("⚠️ Informe um nome válido", "error"); return; }
+          if (!group) { UI.toast("⚠️ Selecione um grupo", "error"); return; }
 
           const exists = this.state.items.some(x => x.name.toLowerCase() === name.toLowerCase() && displayGroupOf(x) === group);
-          if (exists) { UI.toast("Já existe um item com esse nome neste grupo", "warning"); return; }
+          if (exists) { UI.toast("⚠️ Já existe no grupo selecionado", "warning"); return; }
 
           let kind = group;
           let status = "normal";
@@ -1348,6 +1551,7 @@
           if (group === "Insumo Bloqueado") { kind = "Insumo"; status = "blocked"; }
           if (group === "Insumo Vencido") { kind = "Insumo"; status = "expired"; }
           if (group === "Insumo") { kind = "Insumo"; status = "normal"; }
+          if (group === "Solicitação de Cadastro") { kind = "Solicitação de Cadastro"; status = "normal"; }
 
           const newItem = { id: safeUUID(), name, unit, kind, status, isCustom: true };
           const items = [...this.state.items, newItem];
@@ -1355,11 +1559,11 @@
           this.setState({ items });
           this.el.newName.value = "";
           this.el.newUnit.value = "";
-          this.el.newGroup.value = "Insumo";
+          this.el.newGroup.value = "Solicitação de Cadastro";
 
           UI.close("modalNew");
           this.renderAll();
-          UI.toast("Material cadastrado", "success");
+          UI.toast("📝 Solicitação registrada", "success");
         }
 
         qtyNumberById(id) {
@@ -1380,10 +1584,7 @@
         refreshBadgesOnly() {
           const n = this.countFilledItems();
           this.el.badge.textContent = n + " itens informados";
-          this.refreshGroupMetaOnly();
-        }
 
-        refreshGroupMetaOnly() {
           const meta = {};
           for (const g of GROUP_ORDER) meta[g] = { filled: 0, total: 0 };
 
@@ -1433,7 +1634,8 @@
 
             const gn = document.createElement("div");
             gn.className = "group-name";
-            gn.textContent = g;
+            const emoji = GROUP_EMOJI[g] || "📦";
+            gn.textContent = emoji + " " + g;
 
             const gm = document.createElement("div");
             gm.className = "group-meta";
@@ -1530,19 +1732,25 @@
           this.refreshBadgesOnly();
         }
 
-        buildWhatsMessage() {
+        buildMessageAndCsv() {
           const division = DIVISIONS[this.state.division] || DIVISIONS.AC;
           const dateTime = nowPtBrDateTime();
 
           let msg = "";
-          msg += "*REGISTRO DE CONTAGEM*\n";
-          msg += "Divisão: " + division + "\n";
-          msg += "Data e hora: " + dateTime + "\n\n";
+          msg += "📋 *ROTINA DE INVENTÁRIO*\n";
+          msg += "🏭 *MS Florestal*\n";
+          msg += "📍 Divisão: *" + division + "*\n";
+          msg += "🕒 Data e hora: *" + dateTime + "*\n";
+          msg += "\n";
 
           let totalNonZero = 0;
 
+          const csvRows = [];
+          csvRows.push(["Divisão", "DataHora", "Grupo", "Item", "Qtd", "Unidade"].map(csvEscape).join(";"));
+
           for (const groupName of GROUP_ORDER) {
-            msg += "*" + groupName.toUpperCase() + "*\n";
+            const emoji = GROUP_EMOJI[groupName] || "📦";
+            msg += emoji + " *" + groupName.toUpperCase() + "*\n";
 
             const items = this.state.items
               .filter(x => displayGroupOf(x) === groupName)
@@ -1559,57 +1767,83 @@
               totalNonZero += 1;
 
               const unit = it.unit ? (" " + it.unit) : "";
-              msg += idx + ") " + it.name + ": " + formatQty(q) + unit + "\n";
+              msg += idx + "️⃣ " + it.name + ": *" + formatQty(q) + "*" + unit + "\n";
               idx += 1;
+
+              csvRows.push([
+                division,
+                dateTime,
+                groupName,
+                it.name,
+                String(q).replace(".", ","),
+                it.unit || ""
+              ].map(csvEscape).join(";"));
             }
 
             if (!groupHasAny) {
-              msg += "0) Nenhum item informado\n";
+              msg += "➖ Nenhum item informado\n";
             }
 
             msg += "\n";
           }
 
-          return { msg, totalNonZero };
+          msg += "✅ Feito por Lucas Marques\n";
+
+          const csv = csvRows.join("\n");
+          return { msg, csv, totalNonZero, meta: { division, dateTime } };
         }
 
-        registerCount() {
-          const { msg, totalNonZero } = this.buildWhatsMessage();
+        openPreview() {
+          const built = this.buildMessageAndCsv();
+          if (built.totalNonZero === 0) {
+            UI.toast("⚠️ Nenhuma quantidade informada. Preencha pelo menos um item.", "warning");
+            return;
+          }
 
-          if (totalNonZero === 0) {
-            UI.toast("Nenhuma quantidade informada. Preencha pelo menos um item.", "warning");
+          this.state.lastPreview = { msg: built.msg, csv: built.csv, meta: built.meta };
+          this.schedulePersist();
+
+          this.el.previewMsg.value = built.msg;
+          this.el.previewCsv.value = built.csv;
+
+          UI.open("modalPreview");
+        }
+
+        confirmSend() {
+          const built = this.buildMessageAndCsv();
+          if (built.totalNonZero === 0) {
+            UI.toast("⚠️ Nenhuma quantidade informada.", "warning");
             return;
           }
 
           this.setState({ pendingClear: true });
+          UI.close("modalPreview");
+          UI.toast("📲 Abrindo WhatsApp", "success");
 
-          const encoded = encodeURIComponent(msg);
-          UI.toast("Abrindo WhatsApp para registrar a contagem", "success");
+          const encoded = encodeURIComponent(built.msg);
           window.location.href = "https://wa.me/?text=" + encoded;
         }
 
         handleReturnFromWhats() {
           if (!this.state || !this.state.pendingClear) return;
 
-          const cleared = { ...this.state.countsText };
-          for (const k of Object.keys(cleared)) delete cleared[k];
-
+          const cleared = {};
           this.setState({ countsText: cleared, pendingClear: false });
           this.renderAll();
-          UI.toast("Contagem limpa. Pronto para nova contagem.", "success");
+          UI.toast("🧼 Contagem limpa. Pronto para nova contagem.", "success");
         }
 
         async exportBackup() {
           try {
             const jsonPretty = JSON.stringify(this.state, null, 2);
-            const fileName = "backup_contagem_" + Date.now() + ".json";
+            const fileName = "backup_rotina_inventario_" + Date.now() + ".json";
 
             const tryShareFile = async () => {
               if (!("share" in navigator)) return false;
               try {
                 const file = new File([jsonPretty], fileName, { type: "application/json" });
                 if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
-                await navigator.share({ title: "Backup Contagem", files: [file] });
+                await navigator.share({ title: "Backup Rotina Inventário", files: [file] });
                 return true;
               } catch { return false; }
             };
@@ -1635,13 +1869,13 @@
 
             const shared = await tryShareFile();
             if (shared) {
-              UI.toast("Backup compartilhado", "success");
+              UI.toast("📦 Backup compartilhado", "success");
               return;
             }
 
             const downloaded = await tryDownload();
             if (downloaded) {
-              UI.toast("Backup exportado. Se falhar, vou abrir modo cópia.", "warning");
+              UI.toast("📥 Backup exportado. Se falhar, abrirei modo cópia.", "warning");
               setTimeout(() => {
                 this.el.backupText.value = jsonPretty;
                 UI.open("modalBackup");
@@ -1652,7 +1886,7 @@
             this.el.backupText.value = jsonPretty;
             UI.open("modalBackup");
           } catch {
-            UI.toast("Falha ao exportar backup", "error");
+            UI.toast("❌ Falha ao exportar backup", "error");
           }
         }
 
@@ -1661,7 +1895,7 @@
           try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
               await navigator.clipboard.writeText(text);
-              UI.toast("Backup copiado", "success");
+              UI.toast("📋 Backup copiado", "success");
               return;
             }
           } catch {}
@@ -1670,24 +1904,24 @@
             this.el.backupText.focus();
             this.el.backupText.select();
             const ok = document.execCommand("copy");
-            UI.toast(ok ? "Backup copiado" : "Selecione e copie manualmente", ok ? "success" : "warning");
+            UI.toast(ok ? "📋 Backup copiado" : "⚠️ Selecione e copie manualmente", ok ? "success" : "warning");
           } catch {
-            UI.toast("Selecione e copie manualmente", "warning");
+            UI.toast("⚠️ Selecione e copie manualmente", "warning");
           }
         }
 
         async shareBackup() {
           const text = this.el.backupText.value || "";
           if (!("share" in navigator)) {
-            UI.toast("Compartilhar não suportado aqui. Use copiar.", "warning");
+            UI.toast("⚠️ Compartilhar indisponível. Use copiar.", "warning");
             return;
           }
 
           try {
-            await navigator.share({ title: "Backup Contagem", text });
-            UI.toast("Compartilhado", "success");
+            await navigator.share({ title: "Backup Rotina Inventário", text });
+            UI.toast("📤 Compartilhado", "success");
           } catch {
-            UI.toast("Não foi possível compartilhar. Use copiar.", "warning");
+            UI.toast("⚠️ Não foi possível compartilhar. Use copiar.", "warning");
           }
         }
 
@@ -1708,24 +1942,115 @@
               this.updateDivisionUI();
               this.renderAll();
 
-              UI.toast("Backup importado com sucesso", "success");
+              UI.toast("✅ Backup importado", "success");
             } catch {
-              UI.toast("Arquivo inválido ou corrompido", "error");
+              UI.toast("❌ Arquivo inválido ou corrompido", "error");
             } finally {
               try { input.value = ""; } catch {}
             }
           };
           reader.readAsText(file);
         }
+
+        async copyCsv() {
+          const built = this.buildMessageAndCsv();
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(built.csv);
+              UI.toast("📋 Tabela CSV copiada", "success");
+              return;
+            }
+          } catch {}
+
+          try {
+            this.el.previewCsv.focus();
+            this.el.previewCsv.select();
+            const ok = document.execCommand("copy");
+            UI.toast(ok ? "📋 Tabela CSV copiada" : "⚠️ Selecione e copie manualmente", ok ? "success" : "warning");
+          } catch {
+            UI.toast("⚠️ Selecione e copie manualmente", "warning");
+          }
+        }
+
+        async shareXlsx() {
+          const built = this.buildMessageAndCsv();
+          const { division, dateTime } = built.meta || { division: "", dateTime: "" };
+
+          if (!window.XLSX) {
+            UI.toast("⚠️ Módulo de Excel não carregou. Copie a tabela CSV.", "warning");
+            return;
+          }
+
+          try {
+            const rows = [];
+            rows.push(["Divisão", "DataHora", "Grupo", "Item", "Qtd", "Unidade"]);
+
+            for (const groupName of GROUP_ORDER) {
+              const items = this.state.items
+                .filter(x => displayGroupOf(x) === groupName)
+                .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+              for (const it of items) {
+                const q = this.qtyNumberById(it.id);
+                if (q <= 0) continue;
+                rows.push([division, dateTime, groupName, it.name, q, it.unit || ""]);
+              }
+            }
+
+            if (rows.length === 1) {
+              UI.toast("⚠️ Sem itens para gerar Excel", "warning");
+              return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws["!cols"] = [
+              { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 34 }, { wch: 10 }, { wch: 10 }
+            ];
+            XLSX.utils.book_append_sheet(wb, ws, "Contagem");
+
+            const fileName = "contagem_inventario_" + Date.now() + ".xlsx";
+            const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+            const blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const file = new File([blob], fileName, { type: blob.type });
+
+            if ("share" in navigator && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+              await navigator.share({
+                title: "Excel Contagem Inventário",
+                text: "Arquivo Excel da contagem",
+                files: [file]
+              });
+              UI.toast("📤 Excel pronto para enviar", "success");
+              return;
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            a.rel = "noopener";
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+              try { document.body.removeChild(a); } catch {}
+              try { URL.revokeObjectURL(url); } catch {}
+            }, 800);
+
+            UI.toast("📥 Excel gerado. Agora compartilhe pelo Arquivos.", "success");
+          } catch (e) {
+            UI.toast("❌ Falha ao gerar Excel", "error");
+          }
+        }
       }
 
       window.addEventListener("error", (ev) => {
-        UI.toast("Erro: " + (ev.message || "desconhecido"), "error");
+        UI.toast("❌ Erro: " + (ev.message || "desconhecido"), "error");
       });
 
       window.addEventListener("unhandledrejection", (ev) => {
         const r = ev && ev.reason ? (ev.reason.message || String(ev.reason)) : "Falha";
-        UI.toast("Falha: " + r, "error");
+        UI.toast("❌ Falha: " + r, "error");
       });
 
       const app = new App();
