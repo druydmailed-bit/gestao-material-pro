@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Gestão de Materiais Pro</title>
+
+  <style>
+    :root {
+      --bg-base: #0f172a;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-highlight: rgba(255, 255, 255, 0.15);
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition-bounce: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --z-modal: 9000;
+      --z-toast: 9999;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: 0;
+      animation: float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .orb-1 { width: 300px; height: 300px; background: rgba(59, 130, 246, 0.2); top: -100px; left: -100px; }
+    .orb-2 { width: 250px; height: 250px; background: rgba(16, 185, 129, 0.15); bottom: 10%; right: -50px; animation-delay: -5s; }
+
+    @keyframes float {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(40px, 40px); }
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 1;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: clamp(1rem, 5vw, 2rem);
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    header { text-align: center; margin-bottom: 0.5rem; }
+    h1 {
+      font-size: clamp(1.4rem, 6vw, 1.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .input-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.8rem; }
+    label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+    input, select, textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      padding: 0.9rem;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color var(--transition-smooth);
+      appearance: none;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); background: rgba(0, 0, 0, 0.4); }
+
+    .select-wrapper { position: relative; }
+    .select-wrapper::after {
+      content: '▼';
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    select option { background-color: var(--bg-base); color: var(--text-main); }
+
+    .row { display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem; align-items: end; }
+
+    button {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-bounce);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    button:active { transform: scale(0.96); }
+
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: white; margin-top: 1rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+    .btn-warning { background: transparent; border: 1px solid var(--warning); color: var(--warning); padding: 0.5rem; font-size: 0.8rem; }
+
+    .btn-icon {
+      background: transparent; color: var(--danger); width: 36px; height: 36px; padding: 0;
+      border-radius: var(--radius-sm); border: 1px solid transparent;
+    }
+    .btn-icon:hover { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+
+    .items-list {
+      display: flex; flex-direction: column; gap: 0.6rem;
+      margin-top: 1rem; max-height: 40vh; overflow-y: auto; padding-right: 0.2rem;
+    }
+    .items-list::-webkit-scrollbar { width: 4px; }
+    .items-list::-webkit-scrollbar-track { background: transparent; }
+    .items-list::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+
+    .list-item {
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md); padding: 0.8rem 1rem;
+      display: flex; justify-content: space-between; align-items: center;
+      animation: slideIn var(--transition-bounce);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .item-details { display: flex; flex-direction: column; }
+    .item-name { font-weight: 600; font-size: 0.95rem; }
+    .item-qty { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+    .empty-state { text-align: center; padding: 2rem 0; color: var(--text-muted); font-size: 0.9rem; }
+
+    .tools-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .tools-group { display: flex; gap: 10px; }
+    .tool-btn {
+      background: none; border: none; color: var(--text-muted);
+      font-size: 0.8rem; text-decoration: underline; padding: 5px; cursor: pointer; width: auto; font-weight: normal;
+    }
+
+    .toast-container {
+      position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+      z-index: var(--z-toast); display: flex; flex-direction: column; gap: 10px;
+      width: 90%; max-width: 400px; pointer-events: none;
+    }
+    .toast {
+      background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border); border-left: 4px solid var(--primary);
+      border-radius: var(--radius-sm); padding: 1rem; color: white;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: all;
+      animation: slideDown var(--transition-bounce), fadeOut 0.4s ease 3.8s forwards;
+      font-size: 0.85rem; line-height: 1.4;
+    }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      z-index: var(--z-modal); display: flex; justify-content: center; align-items: center;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+      padding: 1rem;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+
+    .modal-content {
+      background: var(--bg-base); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); width: 100%; max-width: 420px; padding: 1.5rem;
+      transform: scale(0.95); transition: transform var(--transition-bounce);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .modal-overlay.active .modal-content { transform: scale(1); }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .modal-title { font-size: 1.2rem; font-weight: 600; }
+    .btn-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; width: auto; padding: 0; cursor: pointer; }
+
+    svg { width: 20px; height: 20px; fill: currentColor; }
+  </style>
+</head>
+
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <main class="app-container">
+    <header>
+      <h1>Gestão de Material</h1>
+    </header>
+
+    <div class="tools-row">
+      <button class="tool-btn" style="color: var(--primary);" id="btnNewMaterial">+ Cadastrar Item</button>
+      <div class="tools-group">
+        <button class="tool-btn" id="btnExport">Exportar Backup</button>
+        <button class="tool-btn" id="btnImport">Importar</button>
+        <input type="file" id="importFile" style="display:none;" accept=".json,application/json" />
+      </div>
+    </div>
+
+    <section class="glass-card">
+      <form id="materialForm" novalidate>
+        <div class="input-group">
+          <label for="materialSelect">Selecione o Material</label>
+          <div class="select-wrapper">
+            <select id="materialSelect" required>
+              <option value="" selected>Escolha um item...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-group" style="margin-bottom:0;">
+            <label for="quantity">Quantidade</label>
+            <input
+              type="text"
+              id="quantity"
+              inputmode="decimal"
+              placeholder="Ex: 0,5 ou 2"
+              autocomplete="off"
+              required
+            />
+          </div>
+          <div>
+            <button type="submit" class="btn-primary" id="btnAdd">Adicionar</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="glass-card">
+      <h2 style="font-size:1.1rem; margin-bottom:0.5rem; color:var(--text-muted);">Lista Atual</h2>
+      <div id="itemsContainer" class="items-list"></div>
+
+      <button class="btn-success" id="btnSend" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"/></svg>
+        Enviar p/ WhatsApp
+      </button>
+    </section>
+  </main>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="modal-overlay" id="modalNovoMaterial" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="novoMaterialTitle">
+      <div class="modal-header">
+        <h3 class="modal-title" id="novoMaterialTitle">Novo Material</h3>
+        <button class="btn-close" id="btnCloseModal" aria-label="Fechar">×</button>
+      </div>
+      <form id="formNovoMaterial" novalidate>
+        <div class="input-group">
+          <label for="novoMaterialNome">Nome do Item e Medida</label>
+          <input type="text" id="novoMaterialNome" placeholder="Ex: Prego 17x27 (kg)" required />
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top:1rem;">Salvar no Catálogo</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalBackupText" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="backupTitle">
+      <div class="modal-header">
+        <h3 class="modal-title" id="backupTitle">Backup Seguro</h3>
+        <button class="btn-close" id="btnCloseBackup" aria-label="Fechar">×</button>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+        Se o download não funcionar no celular, copie o texto abaixo e salve como .json.
+      </p>
+      <textarea id="backupTextArea" rows="8" readonly></textarea>
+      <button id="btnCopyBackup" class="btn-primary" style="margin-top:1rem;">Copiar Código</button>
+      <button id="btnShareBackup" class="btn-primary" style="margin-top:0.6rem;">Compartilhar</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const UI = {
+        showToast(message, type = "success") {
+          const container = document.getElementById("toastContainer");
+          if (!container) return;
+
+          const toast = document.createElement("div");
+          toast.className = "toast";
+
+          if (type === "error") toast.style.borderLeftColor = "var(--danger)";
+          if (type === "warning") toast.style.borderLeftColor = "var(--warning)";
+
+          toast.textContent = String(message);
+          container.appendChild(toast);
+
+          setTimeout(() => {
+            if (container.contains(toast)) container.removeChild(toast);
+          }, 4200);
+        },
+
+        openModal(id) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.classList.add("active");
+          el.setAttribute("aria-hidden", "false");
+        },
+
+        closeModal(id) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.classList.remove("active");
+          el.setAttribute("aria-hidden", "true");
+        },
+      };
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function parsePtBrNumber(raw) {
+        const s0 = String(raw ?? "").trim();
+        if (!s0) return NaN;
+
+        let s = s0.replace(/\s+/g, "");
+
+        const hasComma = s.includes(",");
+        const hasDot = s.includes(".");
+
+        if (hasComma && hasDot) {
+          s = s.replace(/\./g, "").replace(",", ".");
+        } else if (hasComma && !hasDot) {
+          s = s.replace(",", ".");
+        }
+
+        s = s.replace(/[^0-9.+-]/g, "");
+
+        const n = Number(s);
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function formatQty(n) {
+        try {
+          return Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+        } catch {
+          return String(n);
+        }
+      }
+
+      function safeUUID() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+        return "id_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+      }
+
+      function bindTap(el, handler) {
+        if (!el) return;
+        let last = 0;
+        const wrapped = (e) => {
+          const now = Date.now();
+          if (now - last < 250) return;
+          last = now;
+          if (e && typeof e.preventDefault === "function") e.preventDefault();
+          handler(e);
+        };
+        el.addEventListener("click", wrapped, { passive: false });
+        el.addEventListener("pointerup", wrapped, { passive: false });
+      }
+
+      window.addEventListener("error", (ev) => {
+        const msg = ev && ev.message ? ev.message : "Erro desconhecido";
+        UI.showToast("Erro capturado: " + msg, "error");
+      });
+
+      window.addEventListener("unhandledrejection", (ev) => {
+        const reason = ev && ev.reason ? (ev.reason.message || String(ev.reason)) : "Promise rejeitada";
+        UI.showToast("Falha capturada: " + reason, "error");
+      });
+
+      class IDBKV {
+        constructor(dbName, storeName) {
+          this.dbName = dbName;
+          this.storeName = storeName;
+          this.db = null;
+        }
+
+        async open() {
+          if (!("indexedDB" in window)) throw new Error("IndexedDB indisponível");
+          if (this.db) return this.db;
+
+          this.db = await new Promise((resolve, reject) => {
+            let req;
+            try {
+              req = indexedDB.open(this.dbName, 1);
+            } catch (e) {
+              reject(e);
+              return;
+            }
+
+            req.onupgradeneeded = () => {
+              const db = req.result;
+              if (!db.objectStoreNames.contains(this.storeName)) {
+                db.createObjectStore(this.storeName);
+              }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error || new Error("Falha ao abrir IndexedDB"));
+          });
+
+          return this.db;
+        }
+
+        async get(key) {
+          const db = await this.open();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, "readonly");
+            const st = tx.objectStore(this.storeName);
+            const rq = st.get(key);
+            rq.onsuccess = () => resolve(rq.result ?? null);
+            rq.onerror = () => reject(rq.error || new Error("Falha ao ler IndexedDB"));
+          });
+        }
+
+        async set(key, value) {
+          const db = await this.open();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, "readwrite");
+            const st = tx.objectStore(this.storeName);
+            const rq = st.put(value, key);
+            rq.onsuccess = () => resolve(true);
+            rq.onerror = () => reject(rq.error || new Error("Falha ao gravar IndexedDB"));
+          });
+        }
+      }
+
+      class ResilientStore {
+        constructor(key) {
+          this.key = key;
+          this.mem = null;
+          this.idb = new IDBKV("gestao_material_pro_db", "kv");
+          this.preferIDB = true;
+        }
+
+        _defaultState() {
+          return {
+            version: 2,
+            items: [],
+            catalog: [
+              "Cimento CP II 50kg",
+              "Areia Fina (m³)",
+              "Brita 1 (m³)",
+              "Tijolo 8 Furos (milheiro)",
+              "Argamassa AC-II 20kg",
+              "Tubo PVC 100mm"
+            ],
+          };
+        }
+
+        _migrate(state) {
+          if (!state || typeof state !== "object") return this._defaultState();
+          const items = Array.isArray(state.items) ? state.items : [];
+          const catalog = Array.isArray(state.catalog) ? state.catalog : this._defaultState().catalog;
+
+          const normalizedItems = items
+            .filter((x) => x && typeof x === "object")
+            .map((x) => ({
+              id: String(x.id || safeUUID()),
+              material: String(x.material || ""),
+              quantity: Number(x.quantity) || 0,
+            }))
+            .filter((x) => x.material && x.quantity > 0);
+
+          const normalizedCatalog = [...new Set(catalog.map((c) => String(c || "").trim()).filter(Boolean))];
+
+          return { version: 2, items: normalizedItems, catalog: normalizedCatalog };
+        }
+
+        async read() {
+          if (this.mem) return this.mem;
+
+          let raw = null;
+
+          if (this.preferIDB) {
+            try {
+              raw = await this.idb.get(this.key);
+            } catch {
+              this.preferIDB = false;
+            }
+          }
+
+          if (!raw) {
+            try {
+              raw = window.localStorage.getItem(this.key);
+            } catch {
+              raw = null;
+            }
+          }
+
+          let parsed = null;
+          try {
+            parsed = raw ? JSON.parse(raw) : null;
+          } catch {
+            parsed = null;
+          }
+
+          this.mem = this._migrate(parsed);
+          return this.mem;
+        }
+
+        async write(state) {
+          this.mem = state;
+
+          const json = JSON.stringify(state);
+
+          if (this.preferIDB) {
+            try {
+              await this.idb.set(this.key, json);
+            } catch {
+              this.preferIDB = false;
+            }
+          }
+
+          try {
+            window.localStorage.setItem(this.key, json);
+          } catch {
+          }
+        }
+      }
+
+      class MaterialApp {
+        constructor() {
+          this.store = new ResilientStore("gestao_material_pro_v2");
+          this.state = null;
+
+          this.persistTimer = null;
+          this.renderScheduled = false;
+
+          this.el = {
+            form: document.getElementById("materialForm"),
+            select: document.getElementById("materialSelect"),
+            qty: document.getElementById("quantity"),
+            itemsContainer: document.getElementById("itemsContainer"),
+            btnSend: document.getElementById("btnSend"),
+            btnExport: document.getElementById("btnExport"),
+            btnImport: document.getElementById("btnImport"),
+            importFile: document.getElementById("importFile"),
+            btnNewMaterial: document.getElementById("btnNewMaterial"),
+            modalNovoMaterial: document.getElementById("modalNovoMaterial"),
+            btnCloseModal: document.getElementById("btnCloseModal"),
+            formNovoMaterial: document.getElementById("formNovoMaterial"),
+            novoMaterialNome: document.getElementById("novoMaterialNome"),
+            modalBackupText: document.getElementById("modalBackupText"),
+            backupTextArea: document.getElementById("backupTextArea"),
+            btnCloseBackup: document.getElementById("btnCloseBackup"),
+            btnCopyBackup: document.getElementById("btnCopyBackup"),
+            btnShareBackup: document.getElementById("btnShareBackup"),
+          };
+        }
+
+        async init() {
+          this.state = await this.store.read();
+          this.bindEvents();
+          this.renderAll();
+
+          window.addEventListener("pageshow", () => {
+            this.renderAll();
+          });
+
+          UI.showToast("Pronto. Dados carregados com segurança.");
+        }
+
+        bindEvents() {
+          if (this.el.form) {
+            this.el.form.addEventListener("submit", (e) => {
+              e.preventDefault();
+              this.addItem();
+            }, { passive: false });
+          }
+
+          bindTap(this.el.btnSend, () => this.sendToWhatsApp());
+          bindTap(this.el.btnExport, () => this.exportData());
+          bindTap(this.el.btnImport, () => this.el.importFile && this.el.importFile.click());
+          if (this.el.importFile) {
+            this.el.importFile.addEventListener("change", (e) => this.importData(e));
+          }
+
+          bindTap(this.el.btnNewMaterial, () => UI.openModal("modalNovoMaterial"));
+          bindTap(this.el.btnCloseModal, () => UI.closeModal("modalNovoMaterial"));
+
+          if (this.el.formNovoMaterial) {
+            this.el.formNovoMaterial.addEventListener("submit", (e) => {
+              e.preventDefault();
+              this.addMaterialToCatalog();
+            }, { passive: false });
+          }
+
+          bindTap(this.el.btnCloseBackup, () => UI.closeModal("modalBackupText"));
+          bindTap(this.el.btnCopyBackup, () => this.copyBackupText());
+          bindTap(this.el.btnShareBackup, () => this.shareBackup());
+
+          if (this.el.itemsContainer) {
+            this.el.itemsContainer.addEventListener("click", (e) => {
+              const btn = e.target && e.target.closest ? e.target.closest("[data-remove-id]") : null;
+              if (!btn) return;
+              const id = btn.getAttribute("data-remove-id");
+              if (id) this.removeItem(id);
+            });
+          }
+
+          document.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            UI.closeModal("modalNovoMaterial");
+            UI.closeModal("modalBackupText");
+          });
+
+          const overlayIds = ["modalNovoMaterial", "modalBackupText"];
+          overlayIds.forEach((id) => {
+            const overlay = document.getElementById(id);
+            if (!overlay) return;
+            overlay.addEventListener("click", (e) => {
+              if (e.target === overlay) UI.closeModal(id);
+            });
+          });
+        }
+
+        setState(patch) {
+          this.state = { ...this.state, ...patch };
+          this.schedulePersist();
+          this.scheduleRender();
+        }
+
+        schedulePersist() {
+          if (this.persistTimer) clearTimeout(this.persistTimer);
+          this.persistTimer = setTimeout(async () => {
+            try {
+              await this.store.write(this.state);
+            } catch (e) {
+              UI.showToast("Falha ao salvar: " + (e.message || e), "warning");
+            }
+          }, 180);
+        }
+
+        scheduleRender() {
+          if (this.renderScheduled) return;
+          this.renderScheduled = true;
+          requestAnimationFrame(() => {
+            this.renderScheduled = false;
+            this.renderAll();
+          });
+        }
+
+        renderAll() {
+          this.renderCatalog();
+          this.renderItems();
+        }
+
+        renderCatalog() {
+          const select = this.el.select;
+          if (!select) return;
+
+          const current = select.value;
+
+          select.innerHTML = "";
+          const opt0 = document.createElement("option");
+          opt0.value = "";
+          opt0.textContent = "Escolha um item...";
+          select.appendChild(opt0);
+
+          const sortedCatalog = [...this.state.catalog].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+          for (const item of sortedCatalog) {
+            const op = document.createElement("option");
+            op.value = item;
+            op.textContent = item;
+            select.appendChild(op);
+          }
+
+          if (current && this.state.catalog.includes(current)) {
+            select.value = current;
+          } else {
+            select.value = "";
+          }
+        }
+
+        addMaterialToCatalog() {
+          const input = this.el.novoMaterialNome;
+          if (!input) return;
+
+          const nome = String(input.value || "").trim();
+          if (!nome) {
+            UI.showToast("Informe um nome válido.", "error");
+            return;
+          }
+
+          const exists = this.state.catalog.some((c) => c.toLowerCase() === nome.toLowerCase());
+          if (exists) {
+            UI.showToast("Este material já existe no catálogo.", "warning");
+            return;
+          }
+
+          const updated = [...this.state.catalog, nome];
+          this.setState({ catalog: updated });
+
+          input.value = "";
+          UI.closeModal("modalNovoMaterial");
+          UI.showToast('"' + nome + '" adicionado ao catálogo!');
+        }
+
+        addItem() {
+          const material = this.el.select ? this.el.select.value : "";
+          const rawQty = this.el.qty ? this.el.qty.value : "";
+
+          if (!material) {
+            UI.showToast("Selecione um item.", "error");
+            return;
+          }
+
+          const quantity = parsePtBrNumber(rawQty);
+
+          if (!Number.isFinite(quantity) || quantity <= 0) {
+            UI.showToast("Informe uma quantidade válida, exemplo 0,5 ou 2.", "error");
+            return;
+          }
+
+          const items = [...this.state.items];
+          const idx = items.findIndex((i) => i.material === material);
+
+          if (idx >= 0) {
+            const nextQty = (Number(items[idx].quantity) || 0) + quantity;
+            items[idx] = { ...items[idx], quantity: nextQty };
+          } else {
+            items.push({ id: safeUUID(), material, quantity });
+          }
+
+          this.setState({ items });
+
+          if (this.el.select) this.el.select.value = "";
+          if (this.el.qty) this.el.qty.value = "";
+
+          UI.showToast("Item adicionado à lista!", "success");
+        }
+
+        removeItem(id) {
+          const items = this.state.items.filter((x) => x.id !== id);
+          this.setState({ items });
+        }
+
+        renderItems() {
+          const container = this.el.itemsContainer;
+          const btnSend = this.el.btnSend;
+          if (!container || !btnSend) return;
+
+          if (!this.state.items.length) {
+            container.innerHTML = '<div class="empty-state">A lista está vazia.</div>';
+            btnSend.style.display = "none";
+            return;
+          }
+
+          const html = this.state.items.map((item) => {
+            const name = escapeHtml(item.material);
+            const qty = escapeHtml(formatQty(item.quantity));
+            const id = escapeHtml(item.id);
+            return `
+              <div class="list-item">
+                <div class="item-details">
+                  <span class="item-name">${name}</span>
+                  <span class="item-qty">Qtd: <strong>${qty}</strong></span>
+                </div>
+                <button class="btn-icon" type="button" aria-label="Remover" data-remove-id="${id}">
+                  <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+              </div>
+            `;
+          }).join("");
+
+          container.innerHTML = html;
+          btnSend.style.display = "flex";
+        }
+
+        sendToWhatsApp() {
+          if (!this.state.items.length) return;
+
+          const date = new Date().toLocaleDateString("pt-BR");
+          let message = `*SOLICITAÇÃO DE MATERIAL*\n📅 Data: ${date}\n\n*Itens:*\n`;
+
+          this.state.items.forEach((item, index) => {
+            message += `${index + 1}. ${formatQty(item.quantity)}x - ${item.material}\n`;
+          });
+
+          const encoded = encodeURIComponent(message);
+          window.location.href = `https://wa.me/?text=${encoded}`;
+        }
+
+        async exportData() {
+          const jsonPretty = JSON.stringify(this.state, null, 2);
+          const fileName = `materiais_backup_${Date.now()}.json`;
+
+          const openedFallback = () => {
+            if (this.el.backupTextArea) this.el.backupTextArea.value = jsonPretty;
+            UI.openModal("modalBackupText");
+          };
+
+          const tryWebShareFile = async () => {
+            if (!("share" in navigator)) return false;
+            try {
+              const file = new File([jsonPretty], fileName, { type: "application/json" });
+
+              if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+                return false;
+              }
+
+              await navigator.share({
+                title: "Backup de Materiais",
+                text: "Backup do app em JSON.",
+                files: [file],
+              });
+              return true;
+            } catch {
+              return false;
+            }
+          };
+
+          const tryDownload = async () => {
+            try {
+              const blob = new Blob([jsonPretty], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = fileName;
+              a.rel = "noopener";
+              a.style.display = "none";
+              document.body.appendChild(a);
+              a.click();
+
+              setTimeout(() => {
+                try { document.body.removeChild(a); } catch {}
+                try { URL.revokeObjectURL(url); } catch {}
+              }, 500);
+
+              return true;
+            } catch {
+              return false;
+            }
+          };
+
+          const shared = await tryWebShareFile();
+          if (shared) {
+            UI.showToast("Backup compartilhado com sucesso!", "success");
+            return;
+          }
+
+          const downloaded = await tryDownload();
+
+          if (downloaded) {
+            UI.showToast("Se não baixar no celular, vou abrir o modo cópia.", "warning");
+            setTimeout(() => {
+              openedFallback();
+            }, 450);
+          } else {
+            UI.showToast("Download bloqueado. Abrindo modo cópia.", "warning");
+            openedFallback();
+          }
+        }
+
+        async shareBackup() {
+          const jsonPretty = this.el.backupTextArea ? this.el.backupTextArea.value : JSON.stringify(this.state, null, 2);
+          const fileName = `materiais_backup_${Date.now()}.json`;
+
+          if (!("share" in navigator)) {
+            UI.showToast("Compartilhar não suportado aqui. Use copiar.", "warning");
+            return;
+          }
+
+          try {
+            const file = new File([jsonPretty], fileName, { type: "application/json" });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ title: "Backup de Materiais", files: [file] });
+              UI.showToast("Compartilhado!", "success");
+              return;
+            }
+          } catch {}
+
+          try {
+            await navigator.share({ title: "Backup de Materiais", text: jsonPretty });
+            UI.showToast("Compartilhado!", "success");
+          } catch {
+            UI.showToast("Não deu para compartilhar. Use copiar.", "warning");
+          }
+        }
+
+        async copyBackupText() {
+          const textArea = this.el.backupTextArea;
+          if (!textArea) return;
+
+          const text = textArea.value || "";
+
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(text);
+              UI.showToast("Código copiado!", "success");
+              return;
+            }
+          } catch {}
+
+          try {
+            textArea.focus();
+            textArea.select();
+            const ok = document.execCommand("copy");
+            if (ok) UI.showToast("Código copiado!", "success");
+            else UI.showToast("Não consegui copiar automaticamente. Selecione e copie.", "warning");
+          } catch {
+            UI.showToast("Erro ao copiar. Selecione e copie manualmente.", "warning");
+          }
+        }
+
+        importData(event) {
+          const input = event.target;
+          const file = input && input.files ? input.files[0] : null;
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const txt = e.target.result;
+              const parsed = JSON.parse(txt);
+
+              if (!parsed || !Array.isArray(parsed.items) || !Array.isArray(parsed.catalog)) {
+                throw new Error("Formato inválido");
+              }
+
+              const migrated = this.store._migrate(parsed);
+              this.setState(migrated);
+
+              UI.showToast("Backup restaurado com sucesso!", "success");
+            } catch {
+              UI.showToast("Erro: JSON corrompido ou inválido.", "error");
+            } finally {
+              try { input.value = ""; } catch {}
+            }
+          };
+          reader.readAsText(file);
+        }
+      }
+
+      function bootstrap() {
+        const app = new MaterialApp();
+        app.init().catch((e) => UI.showToast("Falha ao iniciar: " + (e.message || e), "error"));
+        window.AppInstance = app;
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootstrap, { passive: true });
+      } else {
+        bootstrap();
+      }
+    })();
+  </script>
+</body>
+</html>
