@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Rotina de Inventário - MS Florestal</title>
+
+  <style>
+    :root{
+      --radius-xl:20px;--radius-lg:16px;--radius-md:12px;--radius-sm:10px;
+      --shadow-lg:0 18px 50px rgba(0,0,0,.18);
+      --shadow-md:0 10px 30px rgba(0,0,0,.16);
+      --shadow-sm:0 6px 18px rgba(0,0,0,.12);
+      --transition:260ms cubic-bezier(.2,0,0,1);
+      --transition-bounce:420ms cubic-bezier(.175,.885,.32,1.275);
+      --font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      --z-toast:9999;--z-modal:9000;
+    }
+
+    html[data-theme="dark"]{
+      --bg:#0b1220;--bg2:#0f172a;--text:#f8fafc;--muted:#94a3b8;--muted2:#7c8aa3;
+      --glass:rgba(255,255,255,.06);--glass2:rgba(255,255,255,.045);
+      --border:rgba(255,255,255,.12);--border2:rgba(255,255,255,.09);
+      --primary:#3b82f6;--primary2:#2563eb;
+      --success:#10b981;--danger:#ef4444;--warning:#f59e0b;
+      --chip:rgba(255,255,255,.07);--chip-border:rgba(255,255,255,.12);
+      --orb1:rgba(59,130,246,.20);--orb2:rgba(16,185,129,.16);--orb3:rgba(245,158,11,.12);
+      --input:rgba(0,0,0,.26);--input2:rgba(0,0,0,.38);
+    }
+
+    html[data-theme="light"]{
+      --bg:#f3f6ff;--bg2:#eef2ff;--text:#0f172a;--muted:#475569;--muted2:#64748b;
+      --glass:rgba(255,255,255,.68);--glass2:rgba(255,255,255,.55);
+      --border:rgba(15,23,42,.10);--border2:rgba(15,23,42,.08);
+      --primary:#2563eb;--primary2:#1d4ed8;
+      --success:#059669;--danger:#dc2626;--warning:#d97706;
+      --chip:rgba(15,23,42,.05);--chip-border:rgba(15,23,42,.10);
+      --orb1:rgba(37,99,235,.20);--orb2:rgba(5,150,105,.16);--orb3:rgba(217,119,6,.10);
+      --input:rgba(15,23,42,.06);--input2:rgba(15,23,42,.10);
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{
+      font-family:var(--font);
+      background:radial-gradient(1200px 800px at 20% 10%,var(--bg2),var(--bg));
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+      position:relative;
+      overscroll-behavior-y:none;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    body.scroll-lock{position:fixed;width:100%;overflow:hidden;left:0;right:0}
+
+    .orb{
+      position:absolute;border-radius:999px;filter:blur(80px);opacity:.95;
+      animation:float 18s infinite alternate cubic-bezier(.4,0,.2,1);
+      z-index:0;pointer-events:none;
+    }
+    .orb.o1{width:360px;height:360px;background:var(--orb1);top:-140px;left:-120px}
+    .orb.o2{width:310px;height:310px;background:var(--orb2);bottom:8%;right:-120px;animation-delay:-6s}
+    .orb.o3{width:260px;height:260px;background:var(--orb3);top:44%;left:-120px;animation-delay:-11s}
+    @keyframes float{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(60px,36px,0) scale(1.04)}}
+
+    .toast-wrap{
+      position:fixed;top:14px;left:50%;transform:translateX(-50%);
+      z-index:var(--z-toast);width:92%;max-width:460px;
+      display:flex;flex-direction:column;gap:10px;pointer-events:none;
+    }
+    .toast{
+      pointer-events:all;background:rgba(15,23,42,.92);
+      border:1px solid rgba(255,255,255,.12);
+      border-left:4px solid var(--primary);
+      border-radius:14px;padding:12px;box-shadow:var(--shadow-lg);
+      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+      color:#fff;font-weight:900;font-size:.88rem;line-height:1.35;
+      animation:drop var(--transition-bounce),fade 360ms ease 3.6s forwards;
+    }
+    html[data-theme="light"] .toast{background:rgba(255,255,255,.90);color:#0f172a;border:1px solid rgba(15,23,42,.12)}
+    @keyframes drop{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fade{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-10px)}}
+
+    .app{
+      position:relative;z-index:1;width:100%;max-width:760px;margin:0 auto;
+      padding:clamp(14px,4vw,22px);
+      display:flex;flex-direction:column;gap:14px;
+      padding-bottom:90px;
+    }
+
+    .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:6px}
+    .brand{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .title{
+      font-size:clamp(1.18rem,5vw,1.55rem);
+      font-weight:900;letter-spacing:-.02em;
+      background:linear-gradient(to right,var(--text),var(--muted2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .subtitle{font-size:.86rem;color:var(--muted);font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .byline{font-size:.78rem;color:var(--muted2);font-weight:800;opacity:.85}
+    .right-actions{display:flex;gap:10px;align-items:center;flex-shrink:0}
+
+    .card{
+      background:var(--glass);
+      border:1px solid var(--border);
+      border-radius:var(--radius-xl);
+      box-shadow:var(--shadow-md);
+      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+      padding:16px;
+    }
+
+    .section-title{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding-bottom:10px;border-bottom:1px solid var(--border2);margin-bottom:10px;
+    }
+    .section-title h2{font-size:.98rem;color:var(--muted);font-weight:950;letter-spacing:-.01em}
+
+    .badge{
+      font-size:.78rem;color:var(--muted);font-weight:950;
+      padding:6px 10px;border-radius:999px;background:var(--chip);
+      border:1px solid var(--chip-border);text-align:center;
+    }
+
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .toolgroup{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+    .linkbtn{
+      background:transparent;border:none;color:var(--muted);text-decoration:underline;
+      font-size:.86rem;font-weight:900;cursor:pointer;padding:6px 8px;border-radius:var(--radius-md);
+      transition:background var(--transition),color var(--transition);
+      touch-action:manipulation;
+    }
+    .linkbtn:active{transform:scale(.98)}
+    .linkbtn.primary{color:var(--primary)}
+
+    .segmented{
+      display:inline-flex;gap:6px;padding:6px;border:1px solid var(--border2);
+      border-radius:999px;background:var(--glass2);box-shadow:var(--shadow-sm);
+    }
+    .segbtn{
+      border:none;cursor:pointer;padding:10px 12px;border-radius:999px;
+      font-weight:900;font-size:.84rem;color:var(--muted);
+      background:transparent;transition:all var(--transition);
+      touch-action:manipulation;user-select:none;white-space:nowrap;
+    }
+    .segbtn.active{
+      background:linear-gradient(135deg,var(--primary),var(--primary2));
+      color:#fff;box-shadow:0 10px 26px rgba(37,99,235,.24);
+    }
+
+    .theme-toggle{
+      border:1px solid var(--border);background:var(--glass2);border-radius:999px;padding:6px;
+      display:inline-flex;gap:8px;align-items:center;box-shadow:var(--shadow-sm);
+    }
+    .iconbtn{
+      width:38px;height:38px;border-radius:999px;border:1px solid transparent;background:transparent;
+      cursor:pointer;display:grid;place-items:center;color:var(--muted);
+      transition:all var(--transition);touch-action:manipulation;user-select:none;
+    }
+    .iconbtn:hover{border-color:var(--border);background:rgba(255,255,255,.04)}
+    html[data-theme="light"] .iconbtn:hover{background:rgba(15,23,42,.04)}
+    .iconbtn:active{transform:scale(.96)}
+
+    .grid2{display:grid;grid-template-columns:1fr;gap:12px}
+
+    .group{border:1px solid var(--border2);background:var(--glass2);border-radius:var(--radius-lg);overflow:hidden}
+    .group-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;cursor:pointer;user-select:none;touch-action:manipulation}
+    .group-left{display:flex;flex-direction:column;gap:4px;min-width:0}
+    .group-name{font-weight:950;letter-spacing:-.02em;font-size:.96rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:8px;align-items:center}
+    .group-meta{font-size:.82rem;color:var(--muted);font-weight:900}
+
+    .chev{width:34px;height:34px;border-radius:12px;border:1px solid var(--border2);background:var(--glass);display:grid;place-items:center;color:var(--muted);transition:transform var(--transition)}
+    .group.closed .chev{transform:rotate(-90deg)}
+    .group-body{padding:10px 12px 12px 12px;display:grid;gap:10px}
+    .group.closed .group-body{display:none}
+
+    .row{display:grid;grid-template-columns:1fr 148px;gap:10px;align-items:center;padding:10px;border-radius:14px;border:1px solid var(--border2);background:var(--glass);box-shadow:var(--shadow-sm)}
+    .row-left{display:flex;flex-direction:column;gap:4px;min-width:0}
+    .item-name{font-size:.92rem;font-weight:950;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .item-sub{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+    .unit{font-size:.78rem;color:var(--muted);font-weight:950;padding:4px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--chip-border)}
+
+    .status{
+      font-size:.78rem;font-weight:950;padding:4px 10px;border-radius:999px;border:1px solid transparent;
+      cursor:pointer;touch-action:manipulation;user-select:none;transition:all var(--transition);
+      background:var(--chip);border-color:var(--chip-border);color:var(--muted);
+    }
+    .status.normal{color:#fff;background:rgba(37,99,235,.18);border-color:rgba(37,99,235,.28)}
+    .status.blocked{color:#fff;background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.28)}
+    .status.expired{color:#fff;background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.28)}
+    html[data-theme="light"] .status.normal{color:var(--primary2);background:rgba(37,99,235,.10);border-color:rgba(37,99,235,.20)}
+    html[data-theme="light"] .status.blocked{color:#9a5b00;background:rgba(217,119,6,.10);border-color:rgba(217,119,6,.20)}
+    html[data-theme="light"] .status.expired{color:#b91c1c;background:rgba(220,38,38,.10);border-color:rgba(220,38,38,.20)}
+
+    .row-right{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+
+    .qty{
+      width:100%;padding:12px;border-radius:14px;border:1px solid var(--border2);
+      background:var(--input);color:var(--text);
+      font-weight:950;font-size:16px;
+      outline:none;transition:border var(--transition),background var(--transition);
+      text-align:right;appearance:none;font-family:inherit;min-height:44px;
+    }
+    .qty:focus{border-color:rgba(37,99,235,.55);background:var(--input2)}
+
+    .trash{
+      width:44px;height:44px;border-radius:14px;border:1px solid transparent;background:transparent;
+      cursor:pointer;color:var(--danger);display:grid;place-items:center;
+      transition:all var(--transition);touch-action:manipulation;user-select:none;
+    }
+    .trash:hover{border-color:rgba(239,68,68,.22);background:rgba(239,68,68,.08)}
+    .trash:active{transform:scale(.96)}
+
+    .cta{
+      width:100%;border:none;border-radius:var(--radius-xl);
+      padding:14px;font-weight:950;font-size:1rem;
+      cursor:pointer;touch-action:manipulation;user-select:none;
+      transition:all var(--transition-bounce);
+      color:#fff;background:linear-gradient(135deg,var(--success),#0ea5e9);
+      box-shadow:0 18px 48px rgba(16,185,129,.18);
+      display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;
+    }
+    .cta:active{transform:scale(.98)}
+    .cta svg{width:20px;height:20px;fill:currentColor}
+    .cta:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:saturate(.8)}
+    .cta[aria-busy="true"]{opacity:.65}
+
+    .modal{
+      position:fixed;inset:0;z-index:var(--z-modal);
+      display:none;align-items:center;justify-content:center;
+      padding:16px;background:rgba(0,0,0,.52);
+      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    }
+    .modal.active{display:flex}
+    .modal-card{
+      width:100%;max-width:680px;background:var(--bg2);
+      border:1px solid var(--border);border-radius:var(--radius-xl);
+      box-shadow:var(--shadow-lg);padding:16px;
+      transform:scale(.98);animation:pop var(--transition-bounce) forwards;
+    }
+    html[data-theme="light"] .modal-card{background:#fff}
+    @keyframes pop{to{transform:scale(1)}}
+
+    .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .modal-title{font-size:1.05rem;font-weight:950;letter-spacing:-.02em}
+
+    .close{
+      width:44px;height:44px;border-radius:14px;border:1px solid var(--border2);
+      background:var(--glass);cursor:pointer;color:var(--muted);
+      display:grid;place-items:center;transition:all var(--transition);
+      touch-action:manipulation;user-select:none;
+    }
+    .close:active{transform:scale(.96)}
+
+    .form{display:grid;gap:10px}
+    .field{display:grid;gap:6px}
+    .label{font-size:.86rem;color:var(--muted);font-weight:950}
+    .input,.select,.textarea{
+      width:100%;padding:12px;border-radius:14px;border:1px solid var(--border2);
+      background:var(--input);color:var(--text);outline:none;
+      font-weight:900;font-size:16px;transition:border var(--transition),background var(--transition);
+      font-family:inherit;appearance:none;
+    }
+    .input:focus,.select:focus,.textarea:focus{border-color:rgba(37,99,235,.55);background:var(--input2)}
+    .textarea{resize:none}
+
+    .primarybtn{
+      width:100%;padding:12px;border:none;border-radius:16px;font-weight:950;
+      cursor:pointer;touch-action:manipulation;user-select:none;
+      transition:all var(--transition-bounce);
+      background:linear-gradient(135deg,var(--primary),var(--primary2));
+      color:#fff;box-shadow:0 18px 44px rgba(37,99,235,.18);
+      min-height:48px;
+    }
+    .primarybtn:active{transform:scale(.98)}
+    .primarybtn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+    .secondarybtn{
+      width:100%;padding:12px;border-radius:16px;font-weight:950;
+      cursor:pointer;touch-action:manipulation;user-select:none;
+      transition:all var(--transition-bounce);
+      background:transparent;border:1px solid var(--border);color:var(--text);
+      min-height:48px;
+    }
+    .secondarybtn:active{transform:scale(.98)}
+    .secondarybtn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+    .hint{font-size:.84rem;color:var(--muted);font-weight:900;line-height:1.35}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:.86rem}
+
+    .footer{
+      position:fixed;left:0;right:0;bottom:0;z-index:2;
+      padding:10px 14px;display:flex;justify-content:center;pointer-events:none;
+    }
+    .footer .foot-card{
+      pointer-events:auto;max-width:760px;width:calc(100% - 24px);
+      background:var(--glass2);border:1px solid var(--border2);
+      border-radius:999px;padding:10px 14px;box-shadow:var(--shadow-sm);
+      display:flex;justify-content:space-between;gap:10px;align-items:center;
+      color:var(--muted);font-weight:900;font-size:.78rem;
+    }
+    .foot-left{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .foot-right{opacity:.85;white-space:nowrap}
+
+    .flow-pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:14px;
+      border:1px solid var(--border2);
+      background:var(--glass);
+      box-shadow:var(--shadow-sm);
+      color:var(--muted);
+      font-weight:950;
+      font-size:.82rem;
+    }
+
+    @media (min-width:700px){
+      .row{grid-template-columns:1fr 170px}
+      .modal-card{max-width:720px}
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <main class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="title">Rotina de Inventário - MS Florestal</div>
+        <div class="subtitle">
+          <span id="subtitleDivision">📌 Divisão:</span>
+          <span class="byline">feito por Lucas Marques</span>
+        </div>
+      </div>
+
+      <div class="right-actions">
+        <div class="theme-toggle" title="Tema">
+          <button class="iconbtn" id="btnTheme" aria-label="Alternar tema" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+              <path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12Zm0-16a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 18a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1ZM4.22 5.64a1 1 0 0 1 1.41 0l.7.7a1 1 0 1 1-1.41 1.41l-.7-.7a1 1 0 0 1 0-1.41Zm13.45 13.45a1 1 0 0 1 1.41 0l.7.7a1 1 0 1 1-1.41 1.41l-.7-.7a1 0 0 1 0-1.41ZM2 13a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1Zm18 0a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1ZM5.64 19.78a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.41 1.41l-.7.7a1 0 0 1-1.41 0ZM19.09 6.33a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.41 1.41l-.7.7a1 0 0 1-1.41 0Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Divisão</h2>
+        <span class="badge" id="countBadge">0 itens informados</span>
+      </div>
+
+      <div class="segmented" role="tablist" aria-label="Seleção de Divisão">
+        <button class="segbtn" id="divAC" type="button">Água Clara MS</button>
+        <button class="segbtn" id="divBG" type="button">Bataguassu MS</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <button class="linkbtn primary" id="btnNewItem" type="button">Solicitar cadastro</button>
+        <div class="toolgroup">
+          <button class="linkbtn" id="btnExport" type="button">Exportar Backup</button>
+          <button class="linkbtn" id="btnImport" type="button">Importar</button>
+          <input type="file" id="importFile" style="display:none;" accept=".json,application/json" />
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Materiais</h2>
+        <span class="badge">Toque em Normal, Bloqueado ou Vencido para alternar</span>
+      </div>
+
+      <div class="grid2" id="groupsRoot"></div>
+
+      <button class="cta" id="btnSend" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2a10 10 0 0 0-7.07 17.07A10 10 0 1 0 12 2Zm-1 6h2v6h-2V8Zm0 8h2v2h-2v-2Z"/>
+        </svg>
+        Registrar Contagem
+      </button>
+    </section>
+  </main>
+
+  <div class="footer">
+    <div class="foot-card">
+      <div class="foot-left">Rotina de Inventário - MS Florestal</div>
+      <div class="foot-right">feito por Lucas Marques</div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalNew">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalNewTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="modalNewTitle">Solicitar cadastro</div>
+        <button class="close" id="btnCloseNew" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12 5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4Z"/>
+          </svg>
+        </button>
+      </div>
+
+      <form class="form" id="formNew" novalidate>
+        <div class="field">
+          <div class="label">Nome</div>
+          <input class="input" id="newName" type="text" placeholder="Ex: Produto X" required />
+        </div>
+
+        <div class="field">
+          <div class="label">Unidade</div>
+          <input class="input" id="newUnit" type="text" placeholder="Ex: Kg, Lt, un, rolos" />
+        </div>
+
+        <div class="field">
+          <div class="label">Grupo desejado</div>
+          <select class="select" id="newGroup" required>
+            <option value="Solicitação de Cadastro">Solicitação de Cadastro</option>
+            <option value="Insumo">Insumo</option>
+            <option value="Insumo Bloqueado">Insumo Bloqueado</option>
+            <option value="Insumo Vencido">Insumo Vencido</option>
+            <option value="Uso e Consumo">Uso e Consumo</option>
+            <option value="Fertilizantes">Fertilizantes</option>
+          </select>
+        </div>
+
+        <button class="primarybtn" type="submit">Registrar solicitação</button>
+      </form>
+
+      <div class="hint" style="margin-top:10px;">As solicitações ficam no grupo Solicitação de Cadastro e aparecem na mensagem</div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalBackup">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalBackupTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="modalBackupTitle">Backup</div>
+        <button class="close" id="btnCloseBackup" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12 5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4Z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="hint" style="margin-bottom:10px;">Se o download falhar, copie o texto e salve como .json</div>
+      <textarea class="textarea mono" id="backupText" rows="10" readonly></textarea>
+
+      <div style="display:grid; gap:10px; margin-top:10px;">
+        <button class="primarybtn" id="btnCopyBackup" type="button">Copiar</button>
+        <button class="secondarybtn" id="btnShareBackup" type="button">Compartilhar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalPreview">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalPreviewTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="modalPreviewTitle">Pré visualização</div>
+        <button class="close" id="btnClosePreview" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12 5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4Z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="hint" style="margin-bottom:10px;">
+        Passo 1 obrigatório: enviar o Excel. O Whats só libera após o Excel ser compartilhado com sucesso
+      </div>
+
+      <div class="field">
+        <div class="label">Mensagem do Whats</div>
+        <textarea class="textarea mono" id="previewMsg" rows="10" readonly></textarea>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+        <div class="flow-pill" id="excelStatusPill">Excel: não enviado</div>
+      </div>
+
+      <div style="display:grid; gap:10px; margin-top:12px;">
+        <button class="primarybtn" id="btnSendExcel" type="button">1 Enviar Excel obrigatório</button>
+        <button class="primarybtn" id="btnOpenWhats" type="button" disabled>2 Abrir Whats</button>
+        <button class="secondarybtn" id="btnCancelSend" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const GROUP_ORDER = [
+        "Insumo",
+        "Insumo Bloqueado",
+        "Insumo Vencido",
+        "Uso e Consumo",
+        "Fertilizantes",
+        "Solicitação de Cadastro"
+      ];
+
+      const GROUP_EMOJI = {
+        "Insumo": "🌿",
+        "Insumo Bloqueado": "⛔",
+        "Insumo Vencido": "⌛",
+        "Uso e Consumo": "🧰",
+        "Fertilizantes": "🌱",
+        "Solicitação de Cadastro": "📝"
+      };
+
+      const DIVISIONS = {
+        AC: "Água Clara - MS",
+        BG: "Bataguassu - MS"
+      };
+
+      function nowPtBrDateTime() {
+        return new Date().toLocaleString("pt-BR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      function nowTimePtBr() {
+        return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      }
+
+      function safeUUID() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+        return "id_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+      }
+
+      function parsePtBrNumber(raw) {
+        const s0 = String(raw ?? "").trim();
+        if (!s0) return NaN;
+        let s = s0.replace(/\s+/g, "");
+        const hasComma = s.includes(",");
+        const hasDot = s.includes(".");
+        if (hasComma && hasDot) s = s.replace(/\./g, "").replace(",", ".");
+        else if (hasComma && !hasDot) s = s.replace(",", ".");
+        s = s.replace(/[^0-9.+-]/g, "");
+        const n = Number(s);
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function formatQty(n) {
+        try { return Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 3 }); }
+        catch { return String(n); }
+      }
+
+      function simpleHashFNV1a(str) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+          h ^= str.charCodeAt(i);
+          h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+        }
+        return ("00000000" + h.toString(16)).slice(-8);
+      }
+
+      async function hashMessage(str) {
+        try {
+          if (crypto && crypto.subtle) {
+            const enc = new TextEncoder().encode(str);
+            const buf = await crypto.subtle.digest("SHA-256", enc);
+            const arr = Array.from(new Uint8Array(buf));
+            return arr.map(b => b.toString(16).padStart(2, "0")).join("");
+          }
+        } catch {}
+        return simpleHashFNV1a(str);
+      }
+
+      const UI = {
+        toast(message, type = "info") {
+          const wrap = document.getElementById("toastWrap");
+          const t = document.createElement("div");
+          t.className = "toast";
+          if (type === "error") t.style.borderLeftColor = "var(--danger)";
+          if (type === "warning") t.style.borderLeftColor = "var(--warning)";
+          if (type === "success") t.style.borderLeftColor = "var(--success)";
+          t.textContent = String(message);
+          wrap.appendChild(t);
+          setTimeout(() => { try { wrap.removeChild(t); } catch {} }, 4200);
+        },
+        open(id) { const el = document.getElementById(id); if (el) el.classList.add("active"); },
+        close(id) { const el = document.getElementById(id); if (el) el.classList.remove("active"); }
+      };
+
+      class IDBKV {
+        constructor(dbName, storeName) { this.dbName = dbName; this.storeName = storeName; this.db = null; }
+        async open() {
+          if (!("indexedDB" in window)) throw new Error("IndexedDB indisponível");
+          if (this.db) return this.db;
+          this.db = await new Promise((resolve, reject) => {
+            let req;
+            try { req = indexedDB.open(this.dbName, 1); } catch (e) { reject(e); return; }
+            req.onupgradeneeded = () => {
+              const db = req.result;
+              if (!db.objectStoreNames.contains(this.storeName)) db.createObjectStore(this.storeName);
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error || new Error("Falha ao abrir IndexedDB"));
+          });
+          return this.db;
+        }
+        async get(key) {
+          const db = await this.open();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, "readonly");
+            const st = tx.objectStore(this.storeName);
+            const rq = st.get(key);
+            rq.onsuccess = () => resolve(rq.result ?? null);
+            rq.onerror = () => reject(rq.error || new Error("Falha ao ler IndexedDB"));
+          });
+        }
+        async set(key, value) {
+          const db = await this.open();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, "readwrite");
+            const st = tx.objectStore(this.storeName);
+            const rq = st.put(value, key);
+            rq.onsuccess = () => resolve(true);
+            rq.onerror = () => reject(rq.error || new Error("Falha ao gravar IndexedDB"));
+          });
+        }
+      }
+
+      class ResilientStore {
+        constructor(key) {
+          this.key = key;
+          this.mem = null;
+          this.preferIDB = true;
+          this.idb = new IDBKV("rotina_inventario_msflorestal_db", "kv");
+        }
+
+        defaultState() {
+          return {
+            version: 6,
+            theme: "dark",
+            division: "AC",
+            groupOpen: Object.fromEntries(GROUP_ORDER.map(g => [g, true])),
+            countsText: {},
+            pendingClear: false,
+            flow: {
+              stage: "idle",
+              lockedAt: null,
+              msgHash: null,
+              excelSharedAt: null
+            },
+            lastPreview: { msg: "", meta: null, hash: null },
+            items: createInitialItems()
+          };
+        }
+
+        migrate(state) {
+          const base = this.defaultState();
+          if (!state || typeof state !== "object") return base;
+
+          const out = {
+            version: 6,
+            theme: (state.theme === "light" || state.theme === "dark") ? state.theme : base.theme,
+            division: (state.division === "AC" || state.division === "BG") ? state.division : base.division,
+            groupOpen: { ...base.groupOpen, ...(state.groupOpen || {}) },
+            countsText: (state.countsText && typeof state.countsText === "object") ? state.countsText : {},
+            pendingClear: !!state.pendingClear,
+            flow: (state.flow && typeof state.flow === "object") ? { ...base.flow, ...state.flow } : base.flow,
+            lastPreview: (state.lastPreview && typeof state.lastPreview === "object") ? { ...base.lastPreview, ...state.lastPreview } : base.lastPreview,
+            items: Array.isArray(state.items) ? state.items : base.items
+          };
+
+          out.items = out.items
+            .filter(x => x && typeof x === "object" && x.id && x.name && x.kind)
+            .map(x => ({
+              id: String(x.id),
+              name: String(x.name),
+              unit: x.unit ? String(x.unit) : "",
+              kind: String(x.kind),
+              status: (x.status === "blocked" || x.status === "expired" || x.status === "normal") ? x.status : "normal",
+              isCustom: !!x.isCustom
+            }));
+
+          if (!out.items.length) out.items = base.items;
+          for (const g of GROUP_ORDER) if (typeof out.groupOpen[g] !== "boolean") out.groupOpen[g] = true;
+
+          const validStages = new Set(["idle", "preview_open", "excel_sharing", "excel_shared", "whats_opened"]);
+          if (!validStages.has(out.flow.stage)) out.flow.stage = "idle";
+          if (typeof out.flow.lockedAt !== "number") out.flow.lockedAt = null;
+          if (typeof out.flow.msgHash !== "string") out.flow.msgHash = null;
+          if (typeof out.flow.excelSharedAt !== "number") out.flow.excelSharedAt = null;
+
+          return out;
+        }
+
+        async read() {
+          if (this.mem) return this.mem;
+
+          let raw = null;
+          if (this.preferIDB) {
+            try { raw = await this.idb.get(this.key); } catch { this.preferIDB = false; }
+          }
+          if (!raw) {
+            try { raw = window.localStorage.getItem(this.key); } catch { raw = null; }
+          }
+
+          let parsed = null;
+          try { parsed = raw ? JSON.parse(raw) : null; } catch { parsed = null; }
+          this.mem = this.migrate(parsed);
+          return this.mem;
+        }
+
+        async write(state) {
+          this.mem = state;
+          const json = JSON.stringify(state);
+          if (this.preferIDB) {
+            try { await this.idb.set(this.key, json); } catch { this.preferIDB = false; }
+          }
+          try { window.localStorage.setItem(this.key, json); } catch {}
+        }
+      }
+
+      function createInitialItems() {
+        const insumo = [
+          ["Actara", "Kg"], ["Agile", "Lt"], ["Atta Mex's", "Kg"], ["Atta Mex's Super Micro", "Kg"],
+          ["Decis 25", "Lt"], ["Dinagro", "Kg"], ["Dipel", "Lt"], ["Distinto BR", "Lt"], ["Esplanade", "Lt"],
+          ["Fipronil", "Kg"], ["Fordor Flex", "Kg"], ["Gel Polim", "Kg"], ["Map", "Kg"], ["Octaborato", "Kg"],
+          ["Óleo Mineral", "Lt"], ["Pledge", "Lt"], ["Prez", "Kg"], ["Scout", "Lt"], ["Solara", "Lt"],
+          ["Sumyzin", "Lt"], ["Sunward", "Kg"], ["Touchdown", "Lt"], ["Topinam", "Lt"], ["Triclopir", "Lt"],
+          ["Valeos", "Kg"], ["Warrant", "Kg"]
+        ];
+
+        const blocked = [["Soldier", "Kg"], ["Landrin", "Kg"]];
+        const expired = [["Block", "Lt"]];
+        const uso = [["Fitilho", "un"], ["Lonas 8x100Mt", "un"], ["Lonas 8x50Mt", "un"], ["Paletes", "un"], ["Stretch", "rolos"]];
+
+        const fert = [
+          ["00.00.54", "Kg"],
+          ["07.09.19 - Polyblen Floresta", "Kg"],
+          ["10.00.35", "Kg"],
+          ["10.00.35 - Empedrado", "Kg"],
+          ["13.24.13", "Kg"],
+          ["14.00.28", "Kg"],
+          ["19.00.19", "Kg"]
+        ];
+
+        const items = [];
+        for (const [name, unit] of insumo) items.push({ id: safeUUID(), name, unit, kind: "Insumo", status: "normal", isCustom: false });
+        for (const [name, unit] of blocked) items.push({ id: safeUUID(), name, unit, kind: "Insumo", status: "blocked", isCustom: false });
+        for (const [name, unit] of expired) items.push({ id: safeUUID(), name, unit, kind: "Insumo", status: "expired", isCustom: false });
+        for (const [name, unit] of uso) items.push({ id: safeUUID(), name, unit, kind: "Uso e Consumo", status: "normal", isCustom: false });
+        for (const [name, unit] of fert) items.push({ id: safeUUID(), name, unit, kind: "Fertilizantes", status: "normal", isCustom: false });
+
+        return items;
+      }
+
+      function displayGroupOf(item) {
+        if (item.kind === "Solicitação de Cadastro") return "Solicitação de Cadastro";
+        if (item.kind !== "Insumo") return item.kind;
+        if (item.status === "blocked") return "Insumo Bloqueado";
+        if (item.status === "expired") return "Insumo Vencido";
+        return "Insumo";
+      }
+
+      function nextStatus(current) {
+        if (current === "normal") return "blocked";
+        if (current === "blocked") return "expired";
+        return "normal";
+      }
+
+      function statusLabel(status) {
+        if (status === "blocked") return "Bloqueado";
+        if (status === "expired") return "Vencido";
+        return "Normal";
+      }
+
+      function statusClass(status) {
+        if (status === "blocked") return "blocked";
+        if (status === "expired") return "expired";
+        return "normal";
+      }
+
+      class App {
+        constructor() {
+          this.store = new ResilientStore("rotina_inventario_msflorestal_v6");
+          this.state = null;
+          this.persistTimer = null;
+
+          this.scrollLockY = 0;
+          this.focusDepth = 0;
+
+          this.el = {
+            subtitleDivision: document.getElementById("subtitleDivision"),
+            groupsRoot: document.getElementById("groupsRoot"),
+            badge: document.getElementById("countBadge"),
+            divAC: document.getElementById("divAC"),
+            divBG: document.getElementById("divBG"),
+            btnTheme: document.getElementById("btnTheme"),
+            btnSend: document.getElementById("btnSend"),
+
+            btnNewItem: document.getElementById("btnNewItem"),
+            btnExport: document.getElementById("btnExport"),
+            btnImport: document.getElementById("btnImport"),
+            importFile: document.getElementById("importFile"),
+
+            btnCloseNew: document.getElementById("btnCloseNew"),
+            formNew: document.getElementById("formNew"),
+            newName: document.getElementById("newName"),
+            newUnit: document.getElementById("newUnit"),
+            newGroup: document.getElementById("newGroup"),
+
+            btnCloseBackup: document.getElementById("btnCloseBackup"),
+            backupText: document.getElementById("backupText"),
+            btnCopyBackup: document.getElementById("btnCopyBackup"),
+            btnShareBackup: document.getElementById("btnShareBackup"),
+
+            btnClosePreview: document.getElementById("btnClosePreview"),
+            previewMsg: document.getElementById("previewMsg"),
+            excelStatusPill: document.getElementById("excelStatusPill"),
+            btnSendExcel: document.getElementById("btnSendExcel"),
+            btnOpenWhats: document.getElementById("btnOpenWhats"),
+            btnCancelSend: document.getElementById("btnCancelSend")
+          };
+        }
+
+        async init() {
+          this.state = await this.store.read();
+          this.applyTheme(this.state.theme);
+          this.bind();
+          this.renderAll();
+          this.updateDivisionUI();
+          this.applyFlowUI();
+
+          window.addEventListener("pageshow", () => this.handleReturnFlow());
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") this.handleReturnFlow();
+          });
+
+          UI.toast("✅ Pronto para registrar a contagem", "success");
+        }
+
+        setState(patch) {
+          this.state = { ...this.state, ...patch };
+          this.schedulePersist();
+        }
+
+        schedulePersist() {
+          if (this.persistTimer) clearTimeout(this.persistTimer);
+          this.persistTimer = setTimeout(async () => {
+            try { await this.store.write(this.state); }
+            catch { UI.toast("⚠️ Falha ao salvar localmente", "warning"); }
+          }, 160);
+        }
+
+        lockScroll() {
+          this.focusDepth += 1;
+          if (this.focusDepth > 1) return;
+          this.scrollLockY = window.scrollY || 0;
+          document.body.classList.add("scroll-lock");
+          document.body.style.top = "-" + this.scrollLockY + "px";
+        }
+
+        unlockScrollDelayed() {
+          this.focusDepth = Math.max(0, this.focusDepth - 1);
+          if (this.focusDepth !== 0) return;
+          setTimeout(() => {
+            document.body.classList.remove("scroll-lock");
+            const y = this.scrollLockY;
+            document.body.style.top = "";
+            window.scrollTo(0, y);
+          }, 60);
+        }
+
+        applyTheme(theme) {
+          document.documentElement.setAttribute("data-theme", theme);
+          this.setState({ theme });
+        }
+
+        toggleTheme() {
+          const next = this.state.theme === "dark" ? "light" : "dark";
+          this.applyTheme(next);
+          UI.toast(next === "dark" ? "🌙 Tema escuro ativado" : "☀️ Tema claro ativado", "success");
+        }
+
+        setDivision(code) {
+          if (code !== "AC" && code !== "BG") return;
+          this.setState({ division: code });
+          this.updateDivisionUI();
+          UI.toast("📍 Divisão: " + DIVISIONS[code], "success");
+        }
+
+        updateDivisionUI() {
+          const ac = this.state.division === "AC";
+          this.el.divAC.classList.toggle("active", ac);
+          this.el.divBG.classList.toggle("active", !ac);
+          this.el.subtitleDivision.textContent = "📌 Divisão: " + (DIVISIONS[this.state.division] || DIVISIONS.AC);
+        }
+
+        setFlow(stage, extra = {}) {
+          const flow = {
+            ...this.state.flow,
+            stage,
+            ...extra
+          };
+          this.setState({ flow });
+          this.applyFlowUI();
+        }
+
+        applyFlowUI() {
+          const stage = this.state.flow.stage;
+
+          const locked = stage !== "idle";
+          this.el.btnSend.disabled = locked;
+
+          if (locked) this.el.btnSend.setAttribute("aria-busy", "true");
+          else this.el.btnSend.removeAttribute("aria-busy");
+
+          if (stage === "idle") {
+            this.el.btnSend.textContent = "Registrar Contagem";
+            return;
+          }
+
+          if (stage === "preview_open") this.el.btnSend.textContent = "Contagem em revisão";
+          if (stage === "excel_sharing") this.el.btnSend.textContent = "Aguardando Excel";
+          if (stage === "excel_shared") this.el.btnSend.textContent = "Excel OK";
+          if (stage === "whats_opened") this.el.btnSend.textContent = "Enviando";
+        }
+
+        toggleGroup(groupName) {
+          const next = { ...this.state.groupOpen, [groupName]: !this.state.groupOpen[groupName] };
+          this.setState({ groupOpen: next });
+          const el = document.getElementById("group_" + groupName);
+          if (el) el.classList.toggle("closed", !next[groupName]);
+        }
+
+        cycleStatus(id) {
+          const idx = this.state.items.findIndex(x => x.id === id);
+          if (idx < 0) return;
+          const it = this.state.items[idx];
+          if (it.kind !== "Insumo") return;
+
+          const updated = [...this.state.items];
+          updated[idx] = { ...it, status: nextStatus(it.status) };
+          this.setState({ items: updated });
+          this.renderAll();
+        }
+
+        removeCustomItem(id) {
+          const it = this.state.items.find(x => x.id === id);
+          if (!it || !it.isCustom) return;
+          const ok = window.confirm("Remover esta solicitação do catálogo?");
+          if (!ok) return;
+
+          const items = this.state.items.filter(x => x.id !== id);
+          const counts = { ...this.state.countsText };
+          delete counts[id];
+          this.setState({ items, countsText: counts });
+          this.renderAll();
+          UI.toast("🗑️ Removido", "success");
+        }
+
+        addCustomItem() {
+          const name = String(this.el.newName.value || "").trim();
+          const unit = String(this.el.newUnit.value || "").trim();
+          const group = String(this.el.newGroup.value || "").trim();
+
+          if (!name) { UI.toast("⚠️ Informe um nome válido", "error"); return; }
+          if (!group) { UI.toast("⚠️ Selecione um grupo", "error"); return; }
+
+          const exists = this.state.items.some(x => x.name.toLowerCase() === name.toLowerCase() && displayGroupOf(x) === group);
+          if (exists) { UI.toast("⚠️ Já existe no grupo selecionado", "warning"); return; }
+
+          let kind = group;
+          let status = "normal";
+
+          if (group === "Insumo Bloqueado") { kind = "Insumo"; status = "blocked"; }
+          if (group === "Insumo Vencido") { kind = "Insumo"; status = "expired"; }
+          if (group === "Insumo") { kind = "Insumo"; status = "normal"; }
+          if (group === "Solicitação de Cadastro") { kind = "Solicitação de Cadastro"; status = "normal"; }
+
+          const newItem = { id: safeUUID(), name, unit, kind, status, isCustom: true };
+          const items = [...this.state.items, newItem];
+
+          this.setState({ items });
+          this.el.newName.value = "";
+          this.el.newUnit.value = "";
+          this.el.newGroup.value = "Solicitação de Cadastro";
+
+          UI.close("modalNew");
+          this.renderAll();
+          UI.toast("📝 Solicitação registrada", "success");
+        }
+
+        qtyNumberById(id) {
+          const raw = this.state.countsText[id];
+          const n = parsePtBrNumber(raw);
+          return Number.isFinite(n) ? n : 0;
+        }
+
+        countFilledItems() {
+          let c = 0;
+          for (const it of this.state.items) if (this.qtyNumberById(it.id) > 0) c++;
+          return c;
+        }
+
+        refreshBadgesOnly() {
+          const n = this.countFilledItems();
+          this.el.badge.textContent = n + " itens informados";
+
+          const meta = {};
+          for (const g of GROUP_ORDER) meta[g] = { filled: 0, total: 0 };
+
+          for (const it of this.state.items) {
+            const dg = displayGroupOf(it);
+            if (!meta[dg]) meta[dg] = { filled: 0, total: 0 };
+            meta[dg].total += 1;
+            if (this.qtyNumberById(it.id) > 0) meta[dg].filled += 1;
+          }
+
+          for (const g of GROUP_ORDER) {
+            const el = document.querySelector(`[data-group-meta="${CSS.escape(g)}"]`);
+            if (!el) continue;
+            const m = meta[g] || { filled: 0, total: 0 };
+            el.textContent = m.filled + " com quantidade, " + m.total + " no total";
+          }
+        }
+
+        renderAll() {
+          this.el.groupsRoot.innerHTML = "";
+
+          const grouped = {};
+          for (const g of GROUP_ORDER) grouped[g] = [];
+          for (const it of this.state.items) {
+            const g = displayGroupOf(it);
+            if (!grouped[g]) grouped[g] = [];
+            grouped[g].push(it);
+          }
+
+          for (const g of GROUP_ORDER) {
+            const list = (grouped[g] || []).slice().sort((a,b)=>a.name.localeCompare(b.name,"pt-BR"));
+            const closed = this.state.groupOpen[g] === false;
+
+            const groupEl = document.createElement("div");
+            groupEl.className = "group" + (closed ? " closed" : "");
+            groupEl.id = "group_" + g;
+
+            const header = document.createElement("div");
+            header.className = "group-header";
+            header.setAttribute("data-group-header", g);
+
+            const left = document.createElement("div");
+            left.className = "group-left";
+
+            const gn = document.createElement("div");
+            gn.className = "group-name";
+            gn.textContent = (GROUP_EMOJI[g] || "📦") + " " + g;
+
+            const gm = document.createElement("div");
+            gm.className = "group-meta";
+            gm.setAttribute("data-group-meta", g);
+            gm.textContent = "0 com quantidade, " + list.length + " no total";
+
+            left.appendChild(gn);
+            left.appendChild(gm);
+
+            const chev = document.createElement("div");
+            chev.className = "chev";
+            chev.innerHTML = `
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                <path d="M7.41 8.59a1 1 0 0 1 1.41 0L12 11.76l3.18-3.17a1 1 0 1 1 1.41 1.41l-3.88 3.88a1 1 0 0 1-1.41 0L7.41 10a1 1 0 0 1 0-1.41Z"/>
+              </svg>
+            `;
+
+            header.appendChild(left);
+            header.appendChild(chev);
+
+            const body = document.createElement("div");
+            body.className = "group-body";
+
+            for (const it of list) {
+              const row = document.createElement("div");
+              row.className = "row";
+
+              const rowLeft = document.createElement("div");
+              rowLeft.className = "row-left";
+
+              const nm = document.createElement("div");
+              nm.className = "item-name";
+              nm.textContent = it.name;
+
+              const sub = document.createElement("div");
+              sub.className = "item-sub";
+
+              if (it.unit) {
+                const unit = document.createElement("span");
+                unit.className = "unit";
+                unit.textContent = it.unit;
+                sub.appendChild(unit);
+              }
+
+              if (it.kind === "Insumo") {
+                const st = document.createElement("button");
+                st.type = "button";
+                st.className = "status " + statusClass(it.status);
+                st.setAttribute("data-status-id", it.id);
+                st.textContent = statusLabel(it.status);
+                sub.appendChild(st);
+              }
+
+              rowLeft.appendChild(nm);
+              rowLeft.appendChild(sub);
+
+              const rowRight = document.createElement("div");
+              rowRight.className = "row-right";
+
+              const inp = document.createElement("input");
+              inp.className = "qty";
+              inp.setAttribute("data-qty-id", it.id);
+              inp.type = "text";
+              inp.inputMode = "decimal";
+              inp.autocomplete = "off";
+              inp.placeholder = "0";
+              inp.value = this.state.countsText[it.id] || "";
+              rowRight.appendChild(inp);
+
+              if (it.isCustom) {
+                const trash = document.createElement("button");
+                trash.type = "button";
+                trash.className = "trash";
+                trash.setAttribute("data-trash-id", it.id);
+                trash.innerHTML = `
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12Zm13-15h-3.5l-1-1h-5l-1 1H5v2h14V4Z"/>
+                  </svg>
+                `;
+                rowRight.appendChild(trash);
+              }
+
+              row.appendChild(rowLeft);
+              row.appendChild(rowRight);
+              body.appendChild(row);
+            }
+
+            groupEl.appendChild(header);
+            groupEl.appendChild(body);
+            this.el.groupsRoot.appendChild(groupEl);
+          }
+
+          this.refreshBadgesOnly();
+        }
+
+        buildWhatsMessage() {
+          const division = DIVISIONS[this.state.division] || DIVISIONS.AC;
+          const dateTime = nowPtBrDateTime();
+
+          let msg = "";
+          msg += "📋 *ROTINA DE INVENTÁRIO*\n";
+          msg += "🏭 *MS Florestal*\n";
+          msg += "\n";
+          msg += "📍 Divisão: *" + division + "*\n";
+          msg += "🕒 Data e hora: *" + dateTime + "*\n";
+          msg += "\n";
+
+          let totalNonZero = 0;
+
+          for (const groupName of GROUP_ORDER) {
+            const emoji = GROUP_EMOJI[groupName] || "📦";
+            msg += emoji + " *" + groupName.toUpperCase() + "*\n";
+
+            const items = this.state.items
+              .filter(x => displayGroupOf(x) === groupName)
+              .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+            let idx = 1;
+            let groupHasAny = false;
+
+            for (const it of items) {
+              const q = this.qtyNumberById(it.id);
+              if (q <= 0) continue;
+
+              groupHasAny = true;
+              totalNonZero += 1;
+
+              const unit = it.unit ? (" " + it.unit) : "";
+              msg += idx + ". " + it.name + ": *" + formatQty(q) + "*" + unit + "\n";
+              idx += 1;
+            }
+
+            if (!groupHasAny) msg += "- Nenhum item informado\n";
+            msg += "\n";
+          }
+
+          return { msg, totalNonZero, meta: { division, dateTime } };
+        }
+
+        async openPreview() {
+          const built = this.buildWhatsMessage();
+          if (built.totalNonZero === 0) {
+            UI.toast("⚠️ Nenhuma quantidade informada. Preencha pelo menos um item.", "warning");
+            return;
+          }
+
+          const msgHash = await hashMessage(built.msg);
+
+          this.setState({
+            lastPreview: { msg: built.msg, meta: built.meta, hash: msgHash }
+          });
+
+          this.setFlow("preview_open", {
+            lockedAt: Date.now(),
+            msgHash,
+            excelSharedAt: null
+          });
+
+          this.el.previewMsg.value = built.msg;
+          this.el.excelStatusPill.textContent = "Excel: não enviado";
+          this.el.btnOpenWhats.disabled = true;
+          this.el.btnSendExcel.disabled = false;
+
+          UI.open("modalPreview");
+        }
+
+        async generateExcelFileFromCurrent() {
+          if (!window.XLSX) throw new Error("XLSX não carregou");
+
+          const built = this.buildWhatsMessage();
+          const { division, dateTime } = built.meta;
+
+          const rows = [];
+          rows.push(["Divisão", "DataHora", "Grupo", "Item", "Qtd", "Unidade"]);
+
+          for (const groupName of GROUP_ORDER) {
+            const items = this.state.items
+              .filter(x => displayGroupOf(x) === groupName)
+              .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+            for (const it of items) {
+              const q = this.qtyNumberById(it.id);
+              if (q <= 0) continue;
+              rows.push([division, dateTime, groupName, it.name, q, it.unit || ""]);
+            }
+          }
+
+          if (rows.length === 1) throw new Error("Sem itens para gerar Excel");
+
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.aoa_to_sheet(rows);
+          ws["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 36 }, { wch: 10 }, { wch: 10 }];
+          XLSX.utils.book_append_sheet(wb, ws, "Contagem");
+
+          const fileName = "contagem_inventario_" + Date.now() + ".xlsx";
+          const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+          const blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          const file = new File([blob], fileName, { type: blob.type });
+
+          return { file, blob, fileName };
+        }
+
+        async shareExcel(file, blob, fileName) {
+          if ("share" in navigator && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+            await navigator.share({
+              title: "Excel Contagem Inventário",
+              text: "Arquivo Excel da contagem",
+              files: [file]
+            });
+            return { ok: true, method: "share" };
+          }
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          a.rel = "noopener";
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try { document.body.removeChild(a); } catch {}
+            try { URL.revokeObjectURL(url); } catch {}
+          }, 900);
+
+          return { ok: false, method: "download" };
+        }
+
+        async sendExcelRequired() {
+          const stage = this.state.flow.stage;
+          if (stage !== "preview_open") return;
+
+          const built = this.buildWhatsMessage();
+          if (built.totalNonZero === 0) {
+            UI.toast("⚠️ Nenhuma quantidade informada.", "warning");
+            return;
+          }
+
+          this.el.btnSendExcel.disabled = true;
+          this.el.btnSendExcel.textContent = "Enviando Excel...";
+          this.el.btnCancelSend.disabled = true;
+          this.el.btnClosePreview.disabled = true;
+
+          this.setFlow("excel_sharing", {
+            lockedAt: this.state.flow.lockedAt || Date.now()
+          });
+
+          try {
+            UI.toast("📄 Gerando Excel...", "success");
+            const { file, blob, fileName } = await this.generateExcelFileFromCurrent();
+
+            UI.toast("📤 Abrindo compartilhamento", "success");
+            const res = await this.shareExcel(file, blob, fileName);
+
+            if (!res.ok) {
+              UI.toast("⚠️ Este navegador não suporta compartilhar arquivo. Use Arquivos para enviar o Excel e tente novamente aqui.", "warning");
+              this.setFlow("preview_open", { excelSharedAt: null });
+              return;
+            }
+
+            const ts = Date.now();
+            this.setFlow("excel_shared", {
+              excelSharedAt: ts
+            });
+
+            this.el.excelStatusPill.textContent = "Excel: enviado às " + nowTimePtBr();
+            this.el.btnOpenWhats.disabled = false;
+
+            UI.toast("✅ Excel enviado. Agora o Whats está liberado.", "success");
+
+          } catch (e) {
+            const msg = e && e.message ? e.message : "Falha ao enviar Excel";
+            UI.toast("❌ " + msg, "error");
+            this.setFlow("preview_open", { excelSharedAt: null });
+
+          } finally {
+            this.el.btnSendExcel.disabled = false;
+            this.el.btnSendExcel.textContent = "1 Enviar Excel obrigatório";
+            this.el.btnCancelSend.disabled = false;
+            this.el.btnClosePreview.disabled = false;
+          }
+        }
+
+        async openWhatsAfterExcel() {
+          const flow = this.state.flow;
+          if (flow.stage !== "excel_shared") {
+            UI.toast("⚠️ Envie o Excel antes de abrir o Whats.", "warning");
+            return;
+          }
+
+          const built = this.buildWhatsMessage();
+          if (built.totalNonZero === 0) {
+            UI.toast("⚠️ Nenhuma quantidade informada.", "warning");
+            return;
+          }
+
+          const currentHash = await hashMessage(built.msg);
+          if (flow.msgHash && currentHash !== flow.msgHash) {
+            UI.toast("⚠️ A contagem mudou. Envie o Excel novamente para esta versão.", "warning");
+            this.el.btnOpenWhats.disabled = true;
+            this.el.excelStatusPill.textContent = "Excel: inválido para esta contagem";
+            this.setFlow("preview_open", { excelSharedAt: null, msgHash: currentHash });
+            return;
+          }
+
+          UI.close("modalPreview");
+          this.setState({ pendingClear: true });
+          this.setFlow("whats_opened", {});
+
+          UI.toast("📲 Abrindo Whats...", "success");
+          const encoded = encodeURIComponent(built.msg);
+          window.location.href = "https://wa.me/?text=" + encoded;
+        }
+
+        handleReturnFlow() {
+          if (!this.state) return;
+          if (!this.state.pendingClear) return;
+
+          this.setState({ countsText: {}, pendingClear: false });
+          this.setFlow("idle", { lockedAt: null, msgHash: null, excelSharedAt: null });
+
+          this.renderAll();
+          UI.toast("✅ Envio concluído e contagem limpa", "success");
+        }
+
+        async exportBackup() {
+          try {
+            const jsonPretty = JSON.stringify(this.state, null, 2);
+            const fileName = "backup_rotina_inventario_" + Date.now() + ".json";
+
+            const tryShareFile = async () => {
+              if (!("share" in navigator)) return false;
+              try {
+                const file = new File([jsonPretty], fileName, { type: "application/json" });
+                if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
+                await navigator.share({ title: "Backup Rotina Inventário", files: [file] });
+                return true;
+              } catch { return false; }
+            };
+
+            const shared = await tryShareFile();
+            if (shared) { UI.toast("📦 Backup compartilhado", "success"); return; }
+
+            const blob = new Blob([jsonPretty], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            a.rel = "noopener";
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+              try { document.body.removeChild(a); } catch {}
+              try { URL.revokeObjectURL(url); } catch {}
+            }, 650);
+
+            UI.toast("📥 Backup exportado. Se falhar, use copiar.", "warning");
+            setTimeout(() => {
+              this.el.backupText.value = jsonPretty;
+              UI.open("modalBackup");
+            }, 420);
+
+          } catch {
+            UI.toast("❌ Falha ao exportar backup", "error");
+          }
+        }
+
+        async copyBackup() {
+          const text = this.el.backupText.value || "";
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(text);
+              UI.toast("📋 Backup copiado", "success");
+              return;
+            }
+          } catch {}
+          try {
+            this.el.backupText.focus();
+            this.el.backupText.select();
+            const ok = document.execCommand("copy");
+            UI.toast(ok ? "📋 Backup copiado" : "⚠️ Selecione e copie manualmente", ok ? "success" : "warning");
+          } catch {
+            UI.toast("⚠️ Selecione e copie manualmente", "warning");
+          }
+        }
+
+        async shareBackup() {
+          const text = this.el.backupText.value || "";
+          if (!("share" in navigator)) {
+            UI.toast("⚠️ Compartilhar indisponível. Use copiar.", "warning");
+            return;
+          }
+          try {
+            await navigator.share({ title: "Backup Rotina Inventário", text });
+            UI.toast("📤 Compartilhado", "success");
+          } catch {
+            UI.toast("⚠️ Não foi possível compartilhar. Use copiar.", "warning");
+          }
+        }
+
+        importBackup(event) {
+          const input = event.target;
+          const file = input.files && input.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const parsed = JSON.parse(e.target.result);
+              const migrated = this.store.migrate(parsed);
+
+              this.state = migrated;
+              this.schedulePersist();
+              this.applyTheme(this.state.theme);
+              this.updateDivisionUI();
+              this.renderAll();
+              this.applyFlowUI();
+
+              UI.toast("✅ Backup importado", "success");
+            } catch {
+              UI.toast("❌ Arquivo inválido ou corrompido", "error");
+            } finally {
+              try { input.value = ""; } catch {}
+            }
+          };
+          reader.readAsText(file);
+        }
+
+        bind() {
+          this.el.divAC.addEventListener("click", () => this.setDivision("AC"));
+          this.el.divBG.addEventListener("click", () => this.setDivision("BG"));
+          this.el.btnTheme.addEventListener("click", () => this.toggleTheme());
+
+          document.getElementById("btnNewItem").addEventListener("click", () => {
+            this.el.newGroup.value = "Solicitação de Cadastro";
+            UI.open("modalNew");
+          });
+
+          document.getElementById("btnCloseNew").addEventListener("click", () => UI.close("modalNew"));
+          this.el.formNew.addEventListener("submit", (e) => { e.preventDefault(); this.addCustomItem(); });
+
+          document.getElementById("btnExport").addEventListener("click", () => this.exportBackup());
+          document.getElementById("btnImport").addEventListener("click", () => this.el.importFile.click());
+          this.el.importFile.addEventListener("change", (e) => this.importBackup(e));
+
+          document.getElementById("btnCloseBackup").addEventListener("click", () => UI.close("modalBackup"));
+          document.getElementById("btnCopyBackup").addEventListener("click", () => this.copyBackup());
+          document.getElementById("btnShareBackup").addEventListener("click", () => this.shareBackup());
+
+          this.el.btnSend.addEventListener("click", () => this.openPreview());
+
+          this.el.btnClosePreview.addEventListener("click", () => {
+            this.setFlow("idle", { lockedAt: null, msgHash: null, excelSharedAt: null });
+            UI.close("modalPreview");
+          });
+
+          this.el.btnCancelSend.addEventListener("click", () => {
+            this.setFlow("idle", { lockedAt: null, msgHash: null, excelSharedAt: null });
+            UI.close("modalPreview");
+          });
+
+          this.el.btnSendExcel.addEventListener("click", () => this.sendExcelRequired());
+          this.el.btnOpenWhats.addEventListener("click", () => this.openWhatsAfterExcel());
+
+          this.el.groupsRoot.addEventListener("click", (e) => {
+            const header = e.target.closest("[data-group-header]");
+            if (header) { this.toggleGroup(header.getAttribute("data-group-header")); return; }
+
+            const statusBtn = e.target.closest("[data-status-id]");
+            if (statusBtn) { this.cycleStatus(statusBtn.getAttribute("data-status-id")); return; }
+
+            const trashBtn = e.target.closest("[data-trash-id]");
+            if (trashBtn) { this.removeCustomItem(trashBtn.getAttribute("data-trash-id")); return; }
+          });
+
+          this.el.groupsRoot.addEventListener("focusin", (e) => {
+            const inp = e.target.closest("[data-qty-id]");
+            if (!inp) return;
+            this.lockScroll();
+          });
+          this.el.groupsRoot.addEventListener("focusout", (e) => {
+            const inp = e.target.closest("[data-qty-id]");
+            if (!inp) return;
+            this.unlockScrollDelayed();
+          });
+
+          this.el.groupsRoot.addEventListener("input", (e) => {
+            const inp = e.target.closest("[data-qty-id]");
+            if (!inp) return;
+            const id = inp.getAttribute("data-qty-id");
+            this.state.countsText[id] = inp.value;
+            this.schedulePersist();
+            this.refreshBadgesOnly();
+          });
+
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              UI.close("modalNew");
+              UI.close("modalBackup");
+              UI.close("modalPreview");
+              this.setFlow("idle", { lockedAt: null, msgHash: null, excelSharedAt: null });
+            }
+          });
+
+          ["modalNew", "modalBackup", "modalPreview"].forEach((id) => {
+            const overlay = document.getElementById(id);
+            overlay.addEventListener("click", (e) => { if (e.target === overlay) UI.close(id); });
+          });
+        }
+      }
+
+      window.addEventListener("error", (ev) => {
+        UI.toast("❌ Erro: " + (ev.message || "desconhecido"), "error");
+      });
+      window.addEventListener("unhandledrejection", (ev) => {
+        const r = ev && ev.reason ? (ev.reason.message || String(ev.reason)) : "Falha";
+        UI.toast("❌ Falha: " + r, "error");
+      });
+
+      (async () => {
+        const app = new App();
+        await app.init();
+        window.AppInstance = app;
+      })();
+    })();
+  </script>
+</body>
+</html>
